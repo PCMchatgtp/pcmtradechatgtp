@@ -11,7 +11,7 @@ async def verifier_et_envoyer_signal():
     actifs = ["BTCUSD", "XAUUSD", "NASDAQ", "DAX"]
     for actif in actifs:
         try:
-            donnees = await recuperer_donnees(actif)
+            donnees = recuperer_donnees(actif)
             contexte = contexte_macro_simplifie()
             signal = generer_signal_ia(donnees, contexte)
 
