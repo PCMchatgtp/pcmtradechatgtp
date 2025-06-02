@@ -3,7 +3,6 @@ from config import FINNHUB_API_KEY
 
 def recuperer_donnees(actif):
     symbol_map = {
-        "BTCUSD": "BINANCE:BTCUSDT",
         "DAX": "INDEX:DEU40",
         "NASDAQ": "US:NDX",
         "XAUUSD": "OANDA:XAU_USD"
