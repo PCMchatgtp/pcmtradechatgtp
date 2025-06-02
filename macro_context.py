@@ -1,30 +1,36 @@
 import requests
-import datetime
-import os
+from datetime import datetime, timedelta
 
 def contexte_macro_simplifie():
     try:
-        # Utilisation de l’API gratuite de ForexFactory (via scraping simplifié)
-        today = datetime.date.today().strftime("%Y-%m-%d")
-        url = f"https://cdn-nfs.forexfactory.net/calendar/events/{today}.json"
+        # On récupère les événements du jour depuis Forex Factory (non officiel)
+        aujourdhui = datetime.utcnow().date().isoformat()
+        url = f"https://cdn-nfs.forexfactory.net/calendar/events/{aujourdhui}.json"
+        reponse = requests.get(url, timeout=10)
+        data = reponse.json()
 
-        response = requests.get(url)
-        data = response.json()
+        evenements = data.get("events", [])
+        if not isinstance(evenements, list):
+            return "❌ Format de données macro non valide."
 
-        # On filtre uniquement les événements importants
-        evenements_importants = []
-        for event in data:
-            if isinstance(event, dict):
-                importance = event.get("importance", "").lower()
-                if "high" in importance:
-                    evenements_importants.append(f"{event.get('title', 'Événement inconnu')} à {event.get('time', '?')}")
+        result = ""
+        for event in evenements:
+            if not isinstance(event, dict):
+                continue  # Ignore les erreurs de type
 
-        if not evenements_importants:
-            return "Pas d’événements macro importants aujourd’hui."
+            importance = event.get("importance", "")
+            if importance.lower() in ["high", "medium"]:
+                title = event.get("title", "Événement inconnu")
+                actual = event.get("actual", "N/A")
+                previous = event.get("previous", "N/A")
+                forecast = event.get("forecast", "N/A")
 
-        # On résume
-        resume = "Événements macro importants aujourd’hui :\n" + "\n".join(evenements_importants)
-        return resume
+                result += (
+                    f"- {title} ({importance}) : Actuel {actual}, "
+                    f"Précédent {previous}, Prévision {forecast}\n"
+                )
+
+        return result if result else "✅ Aucun événement macroéconomique majeur aujourd’hui."
 
     except Exception as e:
         return f"❌ Erreur macro API : {e}"
