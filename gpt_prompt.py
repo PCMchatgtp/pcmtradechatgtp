@@ -1,16 +1,26 @@
-def generer_signal_ia(donnees, contexte, actif):
-    dernier_prix = donnees["c"][-1]
+def generer_signal_ia(donnees, contexte):
+    actif = donnees["actif"]
+    prix = donnees["prix"]
 
-    return f"""
-📊 Analyse IA
-Actif : {actif}
-Prix actuel : {dernier_prix}
-Contexte macro : {contexte}
+    # Exemple simplifié pour XAUUSD
+    if actif == "XAUUSD":
+        stop = round(prix - 16, 1)
+        tp1 = round(prix + 33, 1)
+        tp2 = round(prix + 67, 1)
+        tp3 = round(prix + 101, 1)
+    else:
+        stop = round(prix - 50, 1)
+        tp1 = round(prix + 100, 1)
+        tp2 = round(prix + 200, 1)
+        tp3 = round(prix + 300, 1)
 
-🔁 Entrée : {dernier_prix}
-📉 Stop : {round(dernier_prix * 0.995, 2)}
-📈 TP1 : {round(dernier_prix * 1.01, 2)}
-📈 TP2 : {round(dernier_prix * 1.02, 2)}
-📈 TP3 : {round(dernier_prix * 1.03, 2)}
-🎯 Break-even après TP1 atteint.
-"""
+    return {
+        "actif": actif,
+        "prix": prix,
+        "entree": prix,
+        "stop": stop,
+        "tp1": tp1,
+        "tp2": tp2,
+        "tp3": tp3,
+        "break_even": True
+    }
