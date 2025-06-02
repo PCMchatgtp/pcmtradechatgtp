@@ -20,7 +20,7 @@ async def verifier_et_envoyer_signal():
             else:
                 print(f"[INFO] Aucun signal pour {actif}")
         except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
+            bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
 
 async def main():
     while True:
