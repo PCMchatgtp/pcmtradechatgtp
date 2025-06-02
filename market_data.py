@@ -4,10 +4,10 @@ from config import TWELVE_API_KEY
 
 def recuperer_donnees(actif):
     symbol_map = {
-        "DAX": "DE30/EUR",
-        "NASDAQ": "NDX/USD",
-        "XAUUSD": "XAU/USD"
-    }
+    "DAX": "GDAXI",          # Indice DAX (Allemagne)
+    "NASDAQ": "IXIC",        # Indice Nasdaq Composite
+    "XAUUSD": "XAU/USD"      # Or contre dollar (ça fonctionne déjà)
+}
 
     symbol = symbol_map.get(actif)
     if not symbol:
