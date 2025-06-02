@@ -12,7 +12,7 @@ def recuperer_donnees(actif):
     if not symbole:
         return "Actif non reconnu"
 
-    url = f"https://finnhub.io/api/v1/quote?symbol={symbole}&token={FINNHUB_API_KEY}"
+    url = f"https://finnhub.io/api/v1/crypto/candle?symbol=BINANCE:BTCUSDT&resolution=5&count=100&token={FINNHUB_API_KEY}"
     r = requests.get(url)
     data = r.json()
     return f"Prix actuel : {data.get('c')}, Haut : {data.get('h')}, Bas : {data.get('l')}, Ouverture : {data.get('o')}"
