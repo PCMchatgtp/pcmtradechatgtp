@@ -1,47 +1,16 @@
-import openai
-import os
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 def generer_signal_ia(donnees, contexte, actif):
-    actif = donnees["actif"]
-    symbol = donnees["symbol"]
-    timeframes = donnees["timeframes"]
+    dernier_prix = donnees["c"][-1]
 
-    prompt = f"""
-Tu es une IA de trading spécialisée prop firm.
+    return f"""
+📊 Analyse IA
+Actif : {actif}
+Prix actuel : {dernier_prix}
+Contexte macro : {contexte}
 
-Actif : {actif} ({symbol})
-Contexte multi-timeframe : 5m, 15m, 1h, 4h, 1d, 1w
-Contexte macroéconomique :
-{contexte}
-
-Ta mission :
-1. Analyse les bougies.
-2. Évalue le contexte macro + fondamental.
-3. Si opportunité claire → propose un plan.
-
-⚠️ Critère obligatoire :
-- (TP1 - Entrée) / (Entrée - SL) ≥ 1
-- Sinon : "Pas d'entrée pertinente actuellement."
-
-Format unique si opportunité :
-
-🎯 Plan pour {actif} :
-
-- Action : [Acheter/Vendre]
-- Entrée : [niveau]
-- Stop Loss : [niveau]
-- TP1 : [niveau]
-- TP2 : [niveau]
-- TP3 : [niveau]
-- Break-even : [niveau ou condition]
-- Taux de confiance : [XX %]
-- Justification : [2 phrases max]
+🔁 Entrée : {dernier_prix}
+📉 Stop : {round(dernier_prix * 0.995, 2)}
+📈 TP1 : {round(dernier_prix * 1.01, 2)}
+📈 TP2 : {round(dernier_prix * 1.02, 2)}
+📈 TP3 : {round(dernier_prix * 1.03, 2)}
+🎯 Break-even après TP1 atteint.
 """
-
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response["choices"][0]["message"]["content"].strip()
