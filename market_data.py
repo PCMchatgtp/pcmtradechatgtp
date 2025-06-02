@@ -1,24 +1,32 @@
 import requests
-from config import FMP_API_KEY
+from config import RAPIDAPI_KEY
 
 def recuperer_donnees(actif):
     symbol_map = {
         "DAX": "^GDAXI",
         "NASDAQ": "^NDX",
-        "XAUUSD": "XAUUSD"
+        "XAUUSD": "GC=F"
     }
 
     symbol = symbol_map.get(actif)
     if not symbol:
-        raise ValueError(f"❌ Symbole inconnu pour l’actif {actif}")
+        raise ValueError(f"❌ Actif inconnu : {actif}")
 
-    url = f"https://financialmodelingprep.com/api/v3/quote/{symbol}?apikey={FMP_API_KEY}"
-    response = requests.get(url)
+    url = "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary"
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_KEY,
+        "X-RapidAPI-Host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
+    }
+    params = {"symbol": symbol, "region": "US"}
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code != 200:
+        raise ValueError(f"❌ API Yahoo Finance a échoué pour {actif} : {response.text}")
+
     data = response.json()
 
-    if not isinstance(data, list) or len(data) == 0 or "price" not in data[0]:
-        raise ValueError(f"❌ FMP n’a pas retourné de prix valide pour {actif}")
-
-    prix = data[0]["price"]
-    return {"c": [prix] * 100}  # on simule une série de données
-
+    try:
+        prix = data["price"]["regularMarketPrice"]["raw"]
+        return {"c": [prix] * 100}
+    except Exception:
+        raise ValueError(f"❌ Impossible d’extraire le prix pour {actif}")
