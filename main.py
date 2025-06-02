@@ -13,7 +13,7 @@ async def verifier_et_envoyer_signal():
         try:
             donnees = recuperer_donnees(actif)
             contexte = contexte_macro_simplifie()
-            signal = generer_signal_ia(donnees, contexte)
+            signal = generer_signal_ia(donnees, contexte, actif)
 
             if "Pas d'entrée" not in signal:
                 bot.send_message(chat_id=CHAT_ID, text=f"📡 Signal pour *{actif}* :\n\n{signal}", parse_mode="Markdown")
