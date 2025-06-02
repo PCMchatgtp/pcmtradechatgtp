@@ -1,20 +1,20 @@
 import requests
-from config import FINNHUB_API_KEY
+from config import FINNHUB_API_KEY, FMP_API_KEY
 
 def recuperer_donnees(actif):
     if actif == "XAUUSD":
-        # Source gratuite sans clé API
-        url = "https://api.forexrate.host/latest?base=USD&symbols=XAU"
+        # API FinancialModelingPrep pour l'or
+        url = f"https://financialmodelingprep.com/api/v3/quote/XAUUSD?apikey={FMP_API_KEY}"
         response = requests.get(url)
         data = response.json()
 
-        if "rates" not in data or "XAU" not in data["rates"]:
-            raise ValueError("❌ API ForexRateHost ne retourne pas de prix pour l'or")
+        if not data or "price" not in data[0]:
+            raise ValueError("❌ FMP n’a pas retourné de prix valide pour l’or")
 
-        prix_usd = 1 / data["rates"]["XAU"]  # 1 once d’or = xxx USD
-        return {"c": [prix_usd] * 100}  # On duplique artificiellement pour simuler 100 bougies
+        prix = data[0]["price"]
+        return {"c": [prix] * 100}  # On simule 100 prix identiques
 
-    # Symboles Finnhub pour autres actifs
+    # Symboles Finnhub pour les autres actifs
     symbol_map = {
         "DAX": "INDEX:DEU40",
         "NASDAQ": "US:NDX"
