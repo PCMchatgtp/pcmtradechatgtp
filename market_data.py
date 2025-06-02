@@ -1,54 +1,42 @@
+import yfinance as yf
 import requests
-import os
 
-from datetime import datetime, timedelta
-
-ALPHAV_API_KEY = os.getenv("ALPHAV_API_KEY")
-
-def recuperer_donnees(actif):
-    symbol_map = {
-        "NASDAQ": "QQQ",          # ETF Nasdaq
-        "DAX": "DAX",             # Indice via Yahoo Finance
-        "XAUUSD": "XAU/USD"       # Métal précieux
-    }
-
-    function_map = {
-        "QQQ": "TIME_SERIES_INTRADAY",
-        "DAX": "TIME_SERIES_INTRADAY",
-        "XAU/USD": "FX_INTRADAY"
-    }
-
-    symbol = symbol_map.get(actif)
-    if not symbol:
-        raise ValueError(f"❌ Actif inconnu : {actif}")
-
-    function = function_map[symbol]
-
-    url = f"https://www.alphavantage.co/query"
-    params = {
-        "function": function,
-        "symbol": symbol if function != "FX_INTRADAY" else "XAU/USD",
-        "from_symbol": "XAU",
-        "to_symbol": "USD",
-        "interval": "5min",
-        "apikey": ALPHAV_API_KEY,
-        "outputsize": "compact"
-    }
-
-    response = requests.get(url, params=params)
-    data = response.json()
-
+def recuperer_donnees(actif: str):
     try:
-        # Récupération des données selon le type
-        if "Time Series (5min)" in data:
-            values = data["Time Series (5min)"]
-        elif "Time Series FX (5min)" in data:
-            values = data["Time Series FX (5min)"]
-        else:
-            raise ValueError(f"❌ Données manquantes pour {actif} : {data}")
+        if actif == "XAUUSD":
+            url = "https://api.forexrate.host/latest?base=USD&symbols=XAU"
+            reponse = requests.get(url, timeout=10)
+            data = reponse.json()
 
-        close_prices = [float(v["4. close"]) for k, v in sorted(values.items())]
-        return {"c": close_prices}
+            if "rates" in data and "XAU" in data["rates"]:
+                prix = 1 / data["rates"]["XAU"]
+                return {
+                    "actif": actif,
+                    "prix": round(prix, 2),
+                    "source": "forexrate.host"
+                }
+            else:
+                raise ValueError(f"❌ Données invalides de forexrate.host : {data}")
+
+        elif actif == "DAX":
+            ticker = "^GDAXI"
+        elif actif == "NASDAQ":
+            ticker = "^IXIC"
+        else:
+            raise ValueError(f"❌ Actif non supporté : {actif}")
+
+        data = yf.download(ticker, period="1d", interval="5m", progress=False)
+
+        if data.empty:
+            raise ValueError(f"❌ yfinance n'a pas retourné de données pour {actif}")
+
+        dernier_prix = round(data["Close"].iloc[-1], 2)
+
+        return {
+            "actif": actif,
+            "prix": dernier_prix,
+            "source": "yfinance"
+        }
 
     except Exception as e:
-        raise ValueError(f"❌ Erreur parsing Alpha Vantage : {e}")
+        raise ValueError(f"❌ Erreur lors de la récupération de {actif} : {e}")
