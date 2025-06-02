@@ -1,10 +1,11 @@
 import yfinance as yf
 import requests
+import os
 
 def recuperer_donnees(actif: str):
     try:
         if actif == "XAUUSD":
-            url = "https://api.forexrate.host/latest?base=USD&symbols=XAU"
+            url = "https://api.exchangerate.host/latest?base=USD&symbols=XAU"
             reponse = requests.get(url, timeout=10)
             data = reponse.json()
 
@@ -13,10 +14,10 @@ def recuperer_donnees(actif: str):
                 return {
                     "actif": actif,
                     "prix": round(prix, 2),
-                    "source": "forexrate.host"
+                    "source": "exchangerate.host"
                 }
             else:
-                raise ValueError(f"❌ Données invalides de forexrate.host : {data}")
+                raise ValueError(f"❌ Données invalides de exchangerate.host : {data}")
 
         elif actif == "DAX":
             ticker = "^GDAXI"
