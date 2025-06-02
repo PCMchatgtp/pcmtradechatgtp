@@ -2,6 +2,10 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")  # ✅ Pour les prix marché
+FMP_API_KEY = os.getenv("FMP_API_KEY")          # ✅ Pour le calendrier économique
+GOOGLE_SHEET_WEBHOOK = os.getenv("GOOGLE_SHEET_WEBHOOK")
 
 print("TOKEN =", TOKEN)
 print("CHAT_ID =", CHAT_ID)
