@@ -1,6 +1,5 @@
 import asyncio
 from telegram import Bot
-from telegram.constants import ParseMode
 from config import TOKEN, CHAT_ID
 from market_data import recuperer_donnees
 from macro_context import contexte_macro_simplifie
@@ -40,8 +39,8 @@ Contexte macro : {macro}
 📈 TP3 : {tp3}
 🎯 Break-even après TP1 atteint."""
 
-            await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
-
+            await bot.send_message(chat_id=CHAT_ID, text=message)
+            
         except Exception as e:
             await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
 
