@@ -1,44 +1,30 @@
-import os
 import requests
-from datetime import datetime, timedelta
-
-FMP_API_KEY = os.getenv("FMP_API_KEY")
-SHEET_URL = os.getenv("GOOGLE_SHEET_WEBHOOK")
-
-def envoyer_vers_google_sheet(event):
-    try:
-        payload = {
-            "country": event.get("country", "N/A"),
-            "hour": event.get("date", "N/A"),
-            "event": event.get("event", "N/A"),
-            "importance": event.get("impact", "N/A"),
-            "actual": event.get("actual", "N/A"),
-            "forecast": event.get("forecast", "N/A"),
-            "previous": event.get("previous", "N/A")
-        }
-        requests.post(SHEET_URL, json=payload)
-    except Exception as e:
-        print(f"Erreur envoi vers Google Sheet : {e}")
+import datetime
+import os
 
 def contexte_macro_simplifie():
     try:
-        today = datetime.utcnow().date()
-        tomorrow = today + timedelta(days=1)
-        url = f"https://financialmodelingprep.com/api/v3/economic_calendar?from={today}&to={tomorrow}&apikey={FMP_API_KEY}"
+        # Utilisation de l’API gratuite de ForexFactory (via scraping simplifié)
+        today = datetime.date.today().strftime("%Y-%m-%d")
+        url = f"https://cdn-nfs.forexfactory.net/calendar/events/{today}.json"
+
         response = requests.get(url)
-        events = response.json()
+        data = response.json()
 
-        lignes = []
-        for e in events:
-            if e.get("impact") in ["High", "Medium"]:
-                envoyer_vers_google_sheet(e)
-                ligne = f"• {e.get('country', 'N/A')} - {e.get('date', 'N/A')} : {e.get('event', 'N/A')} ({e.get('impact', 'N/A')}) → Act: {e.get('actual', 'n/a')} / Prév: {e.get('forecast', 'n/a')} / Anc: {e.get('previous', 'n/a')}"
-                lignes.append(ligne)
+        # On filtre uniquement les événements importants
+        evenements_importants = []
+        for event in data:
+            if isinstance(event, dict):
+                importance = event.get("importance", "").lower()
+                if "high" in importance:
+                    evenements_importants.append(f"{event.get('title', 'Événement inconnu')} à {event.get('time', '?')}")
 
-        if lignes:
-            return "📅 Événements macroéconomiques importants du jour :\n" + "\n".join(lignes[:10])
-        else:
-            return "📅 Aucun événement économique majeur prévu aujourd’hui dans les zones concernées."
+        if not evenements_importants:
+            return "Pas d’événements macro importants aujourd’hui."
+
+        # On résume
+        resume = "Événements macro importants aujourd’hui :\n" + "\n".join(evenements_importants)
+        return resume
 
     except Exception as e:
         return f"❌ Erreur macro API : {e}"
