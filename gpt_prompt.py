@@ -3,7 +3,7 @@ import os
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def generer_signal_ia(donnees, contexte):
+def generer_signal_ia(donnees, contexte, actif):
     actif = donnees["actif"]
     symbol = donnees["symbol"]
     timeframes = donnees["timeframes"]
