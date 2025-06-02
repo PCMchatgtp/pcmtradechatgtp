@@ -5,19 +5,24 @@ import os
 def recuperer_donnees(actif: str):
     try:
         if actif == "XAUUSD":
-            url = "https://api.exchangerate.host/latest?base=USD&symbols=XAU"
-            reponse = requests.get(url, timeout=10)
+            api_key = os.getenv("GOLD_API_KEY")
+            url = "https://www.goldapi.io/api/XAU/USD"
+            headers = {
+                "x-access-token": api_key,
+                "Content-Type": "application/json"
+            }
+            reponse = requests.get(url, headers=headers, timeout=10)
             data = reponse.json()
 
-            if "rates" in data and "XAU" in data["rates"]:
-                prix = 1 / data["rates"]["XAU"]
-                return {
-                    "actif": actif,
-                    "prix": round(prix, 2),
-                    "source": "exchangerate.host"
-                }
-            else:
-                raise ValueError(f"❌ Données invalides de exchangerate.host : {data}")
+            if "price" not in data:
+                raise ValueError(f"❌ Données invalides de GoldAPI : {data}")
+
+            prix = data["price"]
+            return {
+                "actif": actif,
+                "prix": round(prix, 2),
+                "source": "goldapi"
+            }
 
         elif actif == "DAX":
             ticker = "^GDAXI"
