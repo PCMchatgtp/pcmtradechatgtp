@@ -8,7 +8,7 @@ from gpt_prompt import generer_signal_ia
 bot = Bot(token=TOKEN)
 
 async def verifier_et_envoyer_signal():
-    actifs = ["BTCUSD", "XAUUSD", "NASDAQ", "DAX"]
+    actifs = ["XAUUSD", "NASDAQ", "DAX"]
     for actif in actifs:
         try:
             donnees = recuperer_donnees(actif)
