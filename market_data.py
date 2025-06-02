@@ -1,33 +1,54 @@
 import requests
-import time
-from config import TWELVE_API_KEY
+import os
+
+from datetime import datetime, timedelta
+
+ALPHAV_API_KEY = os.getenv("ALPHAV_API_KEY")
 
 def recuperer_donnees(actif):
     symbol_map = {
-    "DAX": "GDAXI",          # Indice DAX (Allemagne)
-    "NASDAQ": "IXIC",        # Indice Nasdaq Composite
-    "XAUUSD": "XAU/USD"      # Or contre dollar (ça fonctionne déjà)
-}
+        "NASDAQ": "QQQ",          # ETF Nasdaq
+        "DAX": "DAX",             # Indice via Yahoo Finance
+        "XAUUSD": "XAU/USD"       # Métal précieux
+    }
+
+    function_map = {
+        "QQQ": "TIME_SERIES_INTRADAY",
+        "DAX": "TIME_SERIES_INTRADAY",
+        "XAU/USD": "FX_INTRADAY"
+    }
 
     symbol = symbol_map.get(actif)
     if not symbol:
-        raise ValueError(f"❌ Actif non reconnu : {actif}")
+        raise ValueError(f"❌ Actif inconnu : {actif}")
 
-    url = f"https://api.twelvedata.com/time_series"
+    function = function_map[symbol]
+
+    url = f"https://www.alphavantage.co/query"
     params = {
-        "symbol": symbol,
+        "function": function,
+        "symbol": symbol if function != "FX_INTRADAY" else "XAU/USD",
+        "from_symbol": "XAU",
+        "to_symbol": "USD",
         "interval": "5min",
-        "apikey": TWELVE_API_KEY,
-        "outputsize": 100
+        "apikey": ALPHAV_API_KEY,
+        "outputsize": "compact"
     }
 
     response = requests.get(url, params=params)
     data = response.json()
 
-    if "values" not in data:
-        raise ValueError(f"❌ Données invalides de TwelveData pour {actif} : {data}")
+    try:
+        # Récupération des données selon le type
+        if "Time Series (5min)" in data:
+            values = data["Time Series (5min)"]
+        elif "Time Series FX (5min)" in data:
+            values = data["Time Series FX (5min)"]
+        else:
+            raise ValueError(f"❌ Données manquantes pour {actif} : {data}")
 
-    # Extraire uniquement les prix de clôture dans l’ordre chronologique
-    close_prices = [float(item["close"]) for item in reversed(data["values"])]
+        close_prices = [float(v["4. close"]) for k, v in sorted(values.items())]
+        return {"c": close_prices}
 
-    return {"c": close_prices}
+    except Exception as e:
+        raise ValueError(f"❌ Erreur parsing Alpha Vantage : {e}")
