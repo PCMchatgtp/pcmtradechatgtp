@@ -1,6 +1,7 @@
 import os
 
 TOKEN = os.getenv("TOKEN")
+ALPHAV_API_KEY = os.getenv("ALPHAV_API_KEY")
 TWELVE_API_KEY = os.getenv("TWELVE_API_KEY")
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
