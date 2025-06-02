@@ -1,6 +1,7 @@
 import os
 
 TOKEN = os.getenv("TOKEN")
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")  # ✅ Pour les prix marché
