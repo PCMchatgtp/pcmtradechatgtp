@@ -1,43 +1,52 @@
 import asyncio
 from telegram import Bot
+from telegram.constants import ParseMode
 from config import TOKEN, CHAT_ID
 from market_data import recuperer_donnees
 from macro_context import contexte_macro_simplifie
 from gpt_prompt import generer_signal_ia
 
-actifs = ["XAUUSD", "DAX", "NASDAQ"]  # Liste des actifs à analyser
+derniers_signaux = {}
 
-bot = Bot(token=TOKEN)
+actifs = ["XAUUSD", "DAX", "NASDAQ"]
 
 async def verifier_et_envoyer_signal():
-    contexte = contexte_macro_simplifie()
+    bot = Bot(token=TOKEN)
+
     for actif in actifs:
         try:
             donnees = recuperer_donnees(actif)
+            contexte = contexte_macro_simplifie()
             signal = generer_signal_ia(donnees, contexte)
 
-            message = (
-                f"📡 Signal pour {actif} :\n\n"
-                f"📊 Analyse IA\n"
-                f"Actif : {donnees['actif']}\n"
-                f"Prix actuel : {donnees['prix']}\n"
-                f"Contexte macro : {contexte}\n\n"
-                f"🔁 Entrée : {signal['entree']}\n"
-                f"📉 Stop : {signal['stop']}\n"
-                f"📈 TP1 : {signal['tp1']}\n"
-                f"📈 TP2 : {signal['tp2']}\n"
-                f"📈 TP3 : {signal['tp3']}\n"
-                f"🎯 Break-even après TP1 atteint."
-            )
-            await bot.send_message(chat_id=CHAT_ID, text=message)
+            entree = signal["entree"]
+            stop = signal["stop"]
+            tp1 = signal["tp1"]
+            tp2 = signal["tp2"]
+            tp3 = signal["tp3"]
+            macro = signal.get("macro", "")
+
+            message = f"""📡 Signal pour {actif} :
+
+📊 Analyse IA
+Actif : {actif}
+Prix actuel : {entree}
+Contexte macro : {macro}
+
+🔁 Entrée : {entree}
+📉 Stop : {stop}
+📈 TP1 : {tp1}
+📈 TP2 : {tp2}
+📈 TP3 : {tp3}
+🎯 Break-even après TP1 atteint."""
+
+            await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
 
         except Exception as e:
             await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
 
 async def main():
-    while True:
-        await verifier_et_envoyer_signal()
-        await asyncio.sleep(300)  # 5 minutes entre chaque analyse
+    await verifier_et_envoyer_signal()
 
 if __name__ == "__main__":
     asyncio.run(main())
