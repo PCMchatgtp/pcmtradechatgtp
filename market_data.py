@@ -1,32 +1,33 @@
 import requests
-from config import RAPIDAPI_KEY
+import time
+from config import TWELVE_API_KEY
 
 def recuperer_donnees(actif):
     symbol_map = {
-        "DAX": "^GDAXI",
-        "NASDAQ": "^NDX",
-        "XAUUSD": "GC=F"
+        "DAX": "DE30/EUR",
+        "NASDAQ": "NDX/USD",
+        "XAUUSD": "XAU/USD"
     }
 
     symbol = symbol_map.get(actif)
     if not symbol:
-        raise ValueError(f"❌ Actif inconnu : {actif}")
+        raise ValueError(f"❌ Actif non reconnu : {actif}")
 
-    url = "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary"
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
+    url = f"https://api.twelvedata.com/time_series"
+    params = {
+        "symbol": symbol,
+        "interval": "5min",
+        "apikey": TWELVE_API_KEY,
+        "outputsize": 100
     }
-    params = {"symbol": symbol, "region": "US"}
-    response = requests.get(url, headers=headers, params=params)
 
-    if response.status_code != 200:
-        raise ValueError(f"❌ API Yahoo Finance a échoué pour {actif} : {response.text}")
-
+    response = requests.get(url, params=params)
     data = response.json()
 
-    try:
-        prix = data["price"]["regularMarketPrice"]["raw"]
-        return {"c": [prix] * 100}
-    except Exception:
-        raise ValueError(f"❌ Impossible d’extraire le prix pour {actif}")
+    if "values" not in data:
+        raise ValueError(f"❌ Données invalides de TwelveData pour {actif} : {data}")
+
+    # Extraire uniquement les prix de clôture dans l’ordre chronologique
+    close_prices = [float(item["close"]) for item in reversed(data["values"])]
+
+    return {"c": close_prices}
