@@ -16,7 +16,7 @@ async def verifier_et_envoyer_signal():
             signal = generer_signal_ia(donnees, contexte)
 
             if "Pas d'entrée" not in signal:
-                await bot.send_message(chat_id=CHAT_ID, text=f"📡 Signal pour *{actif}* :\n\n{signal}", parse_mode="Markdown")
+                bot.send_message(chat_id=CHAT_ID, text=f"📡 Signal pour *{actif}* :\n\n{signal}", parse_mode="Markdown")
             else:
                 print(f"[INFO] Aucun signal pour {actif}")
         except Exception as e:
