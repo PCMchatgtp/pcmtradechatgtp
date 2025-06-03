@@ -14,17 +14,19 @@ def verifier_et_envoyer_signal():
             donnees = recuperer_donnees(actif)
             contexte = contexte_macro_simplifie()
             signal = generer_signal_ia(donnees, contexte)
-            message = f"📡 Signal pour {signal['actif']} :\n\n" + \
-                      f"📊 Analyse IA\n" + \
-                      f"Actif : {signal['actif']}\n" + \
-                      f"Prix actuel : {signal['prix']}\n" + \
-                      f"Contexte macro : {signal['macro']}\n\n" + \
-                      f"🔁 Entrée : {signal['prix']}\n" + \
-                      f"📉 Stop : {signal['stop']}\n" + \
-                      f"📈 TP1 : {signal['tp1']}\n" + \
-                      f"📈 TP2 : {signal['tp2']}\n" + \
-                      f"📈 TP3 : {signal['tp3']}\n" + \
-                      f"🎯 Break-even après TP1 atteint."
+            message = (
+                f"📡 Signal pour {signal['actif']} :\n\n"
+                f"📊 Analyse IA\n"
+                f"Actif : {signal['actif']}\n"
+                f"Prix actuel : {donnees['prix']}\n"
+                f"Contexte macro : {contexte}\n\n"
+                f"🔁 Entrée : {signal.get('entrée', signal.get('entree', 'N/A'))}\n"
+                f"📉 Stop : {signal.get('stop', 'N/A')}\n"
+                f"📈 TP1 : {signal.get('tp1', 'N/A')}\n"
+                f"📈 TP2 : {signal.get('tp2', 'N/A')}\n"
+                f"📈 TP3 : {signal.get('tp3', 'N/A')}\n"
+                "🎯 Break-even après TP1 atteint."
+            )
             envoyer_signal(bot, message)
         except Exception as e:
             envoyer_signal(bot, f"❌ Erreur sur {actif} : {e}")
