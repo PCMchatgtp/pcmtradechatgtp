@@ -1,29 +1,20 @@
-# market_data.py
+import requests
+from config import TWELVE_DATA_API_KEY, SYMBOLS
 
-import yfinance as yf
-
-SYMBOL_MAPPING = {
-    "XAUUSD": "GLD",       # Gold via SPDR Gold ETF
-    "DAX": "EWG",          # Allemagne via iShares MSCI Germany ETF
-    "NASDAQ": "QQQ"        # Nasdaq via Invesco QQQ Trust
-}
-
-def recuperer_donnees(actif: str) -> dict:
-    symbole_yahoo = SYMBOL_MAPPING.get(actif)
-    if not symbole_yahoo:
+def recuperer_donnees(actif):
+    symbol = SYMBOLS.get(actif)
+    if not symbol:
         raise ValueError(f"❌ Symbole introuvable pour {actif}")
 
-    try:
-        ticker = yf.Ticker(symbole_yahoo)
-        data = ticker.history(period="1d", interval="5m")
+    url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={TWELVE_DATA_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
 
-        if data.empty:
-            raise ValueError(f"❌ Aucune donnée trouvée pour {symbole_yahoo} sur Yahoo Finance.")
+    if "price" not in data:
+        raise ValueError(f"❌ Données invalides de TwelveData pour {actif} : {data}")
 
-        dernier_prix = round(data["Close"].iloc[-1], 2)
-        return {
-            "actif": actif,
-            "prix": dernier_prix
-        }
-    except Exception as e:
-        raise ValueError(f"❌ Erreur lors de la récupération de {actif} ({symbole_yahoo}) : {e}")
+    prix = float(data["price"])
+    return {
+        "actif": actif,
+        "prix": prix
+    }
