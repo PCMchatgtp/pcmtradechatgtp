@@ -1,17 +1,13 @@
 import os
 
-# 🔐 Token Telegram et chat ID
-TOKEN = os.environ.get("TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
+TOKEN = os.getenv("TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
-# ✅ Liste des actifs à analyser
+if not TOKEN or not CHAT_ID or not TWELVE_DATA_API_KEY:
+    raise ValueError("❌ Variable d'environnement manquante.")
+
 SYMBOLS = {
-    "APPLE": "AAPL"
+    "XAUUSD": "XAU/USD",
+    "NASDAQ": "QQQ"
 }
-
-
-# ✅ Clé API OpenAI
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# ✅ Paramètres de seuils
-MIN_RR_TP1 = 1.0  # Ratio gain/risque minimal sur TP1
