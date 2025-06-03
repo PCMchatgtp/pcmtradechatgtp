@@ -6,10 +6,9 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # ✅ Liste des actifs à analyser
 SYMBOLS = {
-    "XAUUSD": "XAUUSD=X",    # Or
-    "NASDAQ": "^IXIC",       # Nasdaq Composite
-    "DAX": "^GDAXI"          # DAX Allemagne
+    "APPLE": "AAPL"
 }
+
 
 # ✅ Clé API OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
