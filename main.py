@@ -1,51 +1,33 @@
-import asyncio
 from telegram import Bot
-from config import TOKEN, CHAT_ID
+from config import TOKEN, CHAT_ID, SYMBOLS
 from market_data import recuperer_donnees
 from macro_context import contexte_macro_simplifie
 from gpt_prompt import generer_signal_ia
 
-derniers_signaux = {}
+def envoyer_signal(bot, message):
+    bot.send_message(chat_id=CHAT_ID, text=message)
 
-actifs = ["XAUUSD", "DAX", "NASDAQ"]
-
-async def verifier_et_envoyer_signal():
+def verifier_et_envoyer_signal():
     bot = Bot(token=TOKEN)
-
-    for actif in actifs:
+    for actif in SYMBOLS:
         try:
             donnees = recuperer_donnees(actif)
             contexte = contexte_macro_simplifie()
             signal = generer_signal_ia(donnees, contexte)
-
-            entree = signal["entree"]
-            stop = signal["stop"]
-            tp1 = signal["tp1"]
-            tp2 = signal["tp2"]
-            tp3 = signal["tp3"]
-            macro = signal.get("macro", "")
-
-            message = f"""📡 Signal pour {actif} :
-
-📊 Analyse IA
-Actif : {actif}
-Prix actuel : {entree}
-Contexte macro : {macro}
-
-🔁 Entrée : {entree}
-📉 Stop : {stop}
-📈 TP1 : {tp1}
-📈 TP2 : {tp2}
-📈 TP3 : {tp3}
-🎯 Break-even après TP1 atteint."""
-
-            await bot.send_message(chat_id=CHAT_ID, text=message)
-            
+            message = f"📡 Signal pour {signal['actif']} :\n\n" + \
+                      f"📊 Analyse IA\n" + \
+                      f"Actif : {signal['actif']}\n" + \
+                      f"Prix actuel : {signal['prix']}\n" + \
+                      f"Contexte macro : {signal['macro']}\n\n" + \
+                      f"🔁 Entrée : {signal['prix']}\n" + \
+                      f"📉 Stop : {signal['stop']}\n" + \
+                      f"📈 TP1 : {signal['tp1']}\n" + \
+                      f"📈 TP2 : {signal['tp2']}\n" + \
+                      f"📈 TP3 : {signal['tp3']}\n" + \
+                      f"🎯 Break-even après TP1 atteint."
+            envoyer_signal(bot, message)
         except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
-
-async def main():
-    await verifier_et_envoyer_signal()
+            envoyer_signal(bot, f"❌ Erreur sur {actif} : {e}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    verifier_et_envoyer_signal()
