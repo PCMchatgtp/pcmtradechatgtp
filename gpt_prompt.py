@@ -1,36 +1,20 @@
-
 from openai import OpenAI
+import os
 
-client = OpenAI()
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-def generer_signal_ia(actif, prix, tendance, heure, contexte_macro):
-    prompt_utilisateur = f"""
-Tu es un expert en trading algorithmique. Tu dois analyser un marché à partir des éléments suivants :
-
-Actif : {actif}
-Prix actuel : {prix}
-Tendance détectée : {tendance}
-Heure : {heure}
-Contexte macro-économique : {contexte_macro}
-
-Ta tâche est de dire s’il y a une opportunité de trade à court terme (scalping), et uniquement si c’est pertinent.
-Si aucune opportunité claire ne se présente, réponds : "Aucune opportunité à ce moment."
-Sinon, fournis un plan de trading avec :
-- Direction (achat ou vente)
-- Niveau d'entrée exact
-- Stop loss
-- Take profit 1, 2 et 3
-- Justification rapide de la décision
-
-Tu dois être précis, synthétique, et uniquement donner un signal si la configuration est nette.
-"""
-
+def generer_signal_ia(donnees, tendance, heure, contexte_macro):
+    message = f"""
+    Actif : {donnees['actif']}
+    Prix actuel : {donnees['prix']}
+    Heure : {heure}
+    Tendance : {tendance}
+    Contexte macro : {contexte_macro}
+    Analyse les données précédentes et indique si une opportunité de trade existe. 
+    Si oui, donne le sens (achat ou vente), le point d’entrée, le stop et les TP.
+    """
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Tu es un expert en analyse de marché et scalping."},
-            {"role": "user", "content": prompt_utilisateur}
-        ]
+        model="gpt-4",
+        messages=[{"role": "user", "content": message}]
     )
-
     return response.choices[0].message.content
