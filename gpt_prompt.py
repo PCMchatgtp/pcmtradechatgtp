@@ -1,31 +1,29 @@
-import openai
+from openai import OpenAI
 import os
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generer_signal_ia(donnees, macro="Aucune donnée macro disponible."):
-    actif = donnees["actif"]
-    prix = donnees["prix"]
-
+def generer_signal_ia(donnees, contexte_macro):
     prompt = f"""
-Tu es un assistant de trading scalping. Analyse cet actif : {actif}.
-Prix actuel : {prix}
-Contexte macro : {macro}
+Analyse les données suivantes et détermine s'il y a une opportunité de trade à court terme :
+Actif : {donnees['actif']}
+Prix actuel : {donnees['prix']}
+Tendance : {donnees['tendance']}
+MACD : {donnees['macd']}
+Supports : {donnees['support']}
+Résistances : {donnees['resistance']}
+Contexte macroéconomique : {contexte_macro.get("résumé", "Non disponible")}
 
-Règles :
-- Ne propose une entrée que s’il y a une réelle opportunité selon ton analyse technique (support/résistance, impulsion, cassure…).
-- Timeframe : 5 minutes, pas de swing.
-- Objectif : signal rentable avec TP1 > SL.
-- Réponds avec Entrée, Stop, TP1, TP2, TP3.
+Donne uniquement une réponse si une opportunité de trade se présente. Sinon, dis 'Aucune opportunité'. Réponds en format JSON avec : direction, stop, tp1, tp2, tp3, justification.
+    """
 
-S'il n'y a **aucune opportunité claire**, réponds uniquement : "Aucune opportunité".
-"""
-
-    reponse = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2
+        messages=[
+            {"role": "system", "content": "Tu es un expert en trading à haute fréquence."},
+            {"role": "user", "content": prompt}
+        ]
     )
 
-    texte = reponse.choices[0].message.content.strip()
-    return texte
+    contenu = response.choices[0].message.content.strip()
+    return contenu
