@@ -8,5 +8,5 @@ if not TOKEN or not CHAT_ID:
 
 SYMBOLS = {
     "XAUUSD": {"twelve_symbol": "XAU/USD", "timezone": "Etc/UTC"},
-    "NASDAQ": {"twelve_symbol": "NDX", "timezone": "America/New_York"}
+    "NASDAQ": {"twelve_symbol": "qqq", "timezone": "America/New_York"}
 }
