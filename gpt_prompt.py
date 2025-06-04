@@ -1,20 +1,31 @@
-def generer_signal_ia(donnees, contexte_macro):
+import openai
+import os
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def generer_signal_ia(donnees, macro="Aucune donnée macro disponible."):
     actif = donnees["actif"]
     prix = donnees["prix"]
-    
-    # Exemple très simple d’IA logique. À affiner.
-    decision = "attendre"
-    if actif == "XAUUSD" and float(prix) < 2400:
-        decision = "prendre position"
-    elif actif == "NASDAQ" and float(prix) > 17000:
-        decision = "prendre position"
 
-    return {
-        "macro": contexte_macro.get("résumé", "Données macro indisponibles") if isinstance(contexte_macro, dict) else contexte_macro,
-        "entree": prix,
-        "stop": round(float(prix) - 15, 2),
-        "tp1": round(float(prix) + 30, 2),
-        "tp2": round(float(prix) + 60, 2),
-        "tp3": round(float(prix) + 90, 2),
-        "decision": decision,
-    }
+    prompt = f"""
+Tu es un assistant de trading scalping. Analyse cet actif : {actif}.
+Prix actuel : {prix}
+Contexte macro : {macro}
+
+Règles :
+- Ne propose une entrée que s’il y a une réelle opportunité selon ton analyse technique (support/résistance, impulsion, cassure…).
+- Timeframe : 5 minutes, pas de swing.
+- Objectif : signal rentable avec TP1 > SL.
+- Réponds avec Entrée, Stop, TP1, TP2, TP3.
+
+S'il n'y a **aucune opportunité claire**, réponds uniquement : "Aucune opportunité".
+"""
+
+    reponse = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2
+    )
+
+    texte = reponse.choices[0].message.content.strip()
+    return texte
