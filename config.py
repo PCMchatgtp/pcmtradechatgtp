@@ -1,12 +1,11 @@
 import os
 
-TOKEN = os.getenv("TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
-
-if not TOKEN or not CHAT_ID:
-    raise ValueError("❌ Variable d'environnement manquante.")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 SYMBOLS = {
-    "XAUUSD": {"twelve_symbol": "XAU/USD", "timezone": "Etc/UTC"},
-    "NASDAQ": {"twelve_symbol": "qqq", "timezone": "America/New_York"}
+    "XAUUSD": {"symbol": "XAU/USD", "start_hour": 7, "end_hour": 22},
+    "NASDAQ": {"symbol": "QQQ", "start_hour": 15, "end_hour": 18},
+    "BTCUSD": {"symbol": "BTC/USD", "start_hour": 7, "end_hour": 22},
 }
