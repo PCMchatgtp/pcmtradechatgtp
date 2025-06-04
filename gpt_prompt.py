@@ -1,41 +1,36 @@
-import openai
-import os
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from openai import OpenAI
 
-def generer_signal_ia(donnees, contexte_macro):
-    prompt = f'''
-Tu es un expert en scalping court terme. Voici les données de marché :
+client = OpenAI()
 
-Actif : {donnees['actif']}
-Prix actuel : {donnees['prix']}
-Contexte macro : {contexte_macro}
+def generer_signal_ia(actif, prix, tendance, heure, contexte_macro):
+    prompt_utilisateur = f"""
+Tu es un expert en trading algorithmique. Tu dois analyser un marché à partir des éléments suivants :
 
-Analyse la situation. Si une opportunité se présente, fournis un plan clair.
-Sinon, indique qu'il n'y a pas d'opportunité.
+Actif : {actif}
+Prix actuel : {prix}
+Tendance détectée : {tendance}
+Heure : {heure}
+Contexte macro-économique : {contexte_macro}
 
-Format de réponse JSON :
-{{
-  "actif": "...",
-  "prix": ...,
-  "tendance": "...",
-  "heure": "...",
-  "contexte_macro": "...",
-  "opportunite": true/false,
-  "plan": {{
-    "entree": ...,
-    "stop": ...,
-    "tp1": ...,
-    "tp2": ...,
-    "tp3": ...
-  }}
-}}
-'''
-    reponse = openai.ChatCompletion.create(
+Ta tâche est de dire s’il y a une opportunité de trade à court terme (scalping), et uniquement si c’est pertinent.
+Si aucune opportunité claire ne se présente, réponds : "Aucune opportunité à ce moment."
+Sinon, fournis un plan de trading avec :
+- Direction (achat ou vente)
+- Niveau d'entrée exact
+- Stop loss
+- Take profit 1, 2 et 3
+- Justification rapide de la décision
+
+Tu dois être précis, synthétique, et uniquement donner un signal si la configuration est nette.
+"""
+
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
+        messages=[
+            {"role": "system", "content": "Tu es un expert en analyse de marché et scalping."},
+            {"role": "user", "content": prompt_utilisateur}
+        ]
     )
 
-    message = reponse["choices"][0]["message"]["content"]
-    return message
+    return response.choices[0].message.content
