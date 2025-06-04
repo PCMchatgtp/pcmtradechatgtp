@@ -1,29 +1,37 @@
-from openai import OpenAI
-import os
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+import openai
 
 def generer_signal_ia(donnees, contexte_macro):
     prompt = f"""
-Analyse les données suivantes et détermine s'il y a une opportunité de trade à court terme :
+Tu es un expert en trading scalping. Analyse les données suivantes et détermine s'il y a une opportunité de trade.
+
 Actif : {donnees['actif']}
 Prix actuel : {donnees['prix']}
-Tendance : {donnees['tendance']}
-MACD : {donnees['macd']}
-Supports : {donnees['support']}
-Résistances : {donnees['resistance']}
-Contexte macroéconomique : {contexte_macro.get("résumé", "Non disponible")}
+Heure : {donnees['heure']}
+Contexte macroéconomique : {contexte_macro}
 
-Donne uniquement une réponse si une opportunité de trade se présente. Sinon, dis 'Aucune opportunité'. Réponds en format JSON avec : direction, stop, tp1, tp2, tp3, justification.
-    """
+Donne ta réponse sous forme d’un dictionnaire JSON contenant :
+- tendance (achat ou vente ou neutre)
+- entree (prix d’entrée)
+- stop
+- tp1
+- tp2
+- tp3
 
-    response = client.chat.completions.create(
+Si aucune opportunité, répond : "neutre".
+"""
+
+    reponse = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Tu es un expert en trading à haute fréquence."},
-            {"role": "user", "content": prompt}
-        ]
+        messages=[{"role": "user", "content": prompt}]
     )
 
-    contenu = response.choices[0].message.content.strip()
-    return contenu
+    contenu = reponse["choices"][0]["message"]["content"]
+
+    if contenu.strip().lower() == "neutre":
+        return {"tendance": "neutre"}
+
+    try:
+        resultat = eval(contenu)
+        return resultat
+    except:
+        raise ValueError("❌ Réponse IA invalide ou mal formée :\n" + contenu)
