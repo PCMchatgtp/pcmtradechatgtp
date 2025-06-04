@@ -1,4 +1,7 @@
 import asyncio
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
+import threading
 from telegram import Bot
 from config import TOKEN, CHAT_ID, SYMBOLS
 from market_data import recuperer_donnees
@@ -54,5 +57,18 @@ async def main():
         await verifier_et_envoyer_signal(bot)
         await asyncio.sleep(300)  # 5 minutes
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_health_server():
+    port = int(os.getenv("PORT", 8080))
+    server = HTTPServer(("", port), HealthHandler)
+    server.serve_forever()
+
 if __name__ == "__main__":
+    server_thread = threading.Thread(target=run_health_server, daemon=True)
+    server_thread.start()
     asyncio.run(main())
