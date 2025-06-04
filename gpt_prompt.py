@@ -1,37 +1,33 @@
-import openai
+def generer_signal_ia(donnees):
+    actif = donnees["actif"]
+    prix = donnees["prix"]
+    tendance = donnees["tendance"]
+    heure = donnees["heure"]
 
-def generer_signal_ia(donnees, contexte_macro):
-    prompt = f"""
-Tu es un expert en trading scalping. Analyse les données suivantes et détermine s'il y a une opportunité de trade.
+    if actif == "XAUUSD" and not (7 <= heure.hour <= 22):
+        return None
 
-Actif : {donnees['actif']}
-Prix actuel : {donnees['prix']}
-Heure : {donnees['heure']}
-Contexte macroéconomique : {contexte_macro}
+    if actif == "NASDAQ" and not (15 <= heure.hour <= 18):
+        return None
 
-Donne ta réponse sous forme d’un dictionnaire JSON contenant :
-- tendance (achat ou vente ou neutre)
-- entree (prix d’entrée)
-- stop
-- tp1
-- tp2
-- tp3
+    if tendance != "hausse":
+        return None
 
-Si aucune opportunité, répond : "neutre".
-"""
+    tp1 = round(prix * 1.01, 2)
+    tp2 = round(prix * 1.02, 2)
+    tp3 = round(prix * 1.03, 2)
+    sl = round(prix * 0.99, 2)
 
-    reponse = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
+    return f"""📡 Signal pour {actif} :
 
-    contenu = reponse["choices"][0]["message"]["content"]
+📊 Analyse IA
+Actif : {actif}
+Prix actuel : {prix}
+Tendance détectée : {tendance}
 
-    if contenu.strip().lower() == "neutre":
-        return {"tendance": "neutre"}
-
-    try:
-        resultat = eval(contenu)
-        return resultat
-    except:
-        raise ValueError("❌ Réponse IA invalide ou mal formée :\n" + contenu)
+🔁 Entrée : {prix}
+📉 Stop : {sl}
+📈 TP1 : {tp1}
+📈 TP2 : {tp2}
+📈 TP3 : {tp3}
+🎯 Break-even après TP1 atteint.""" 

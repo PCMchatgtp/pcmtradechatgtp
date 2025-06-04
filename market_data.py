@@ -1,19 +1,17 @@
 import requests
-from config import TWELVEDATA_API_KEY
+import os
+from datetime import datetime
 
-def recuperer_donnees(actif):
-    symboles_twelve = {
-        "XAUUSD": "XAU/USD",
-        "NASDAQ": "NDX"
-    }
+API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+BASE_URL = "https://api.twelvedata.com/price"
 
-    symbole = symboles_twelve.get(actif)
-    if not symbole:
-        raise ValueError(f"❌ Actif non supporté : {actif}")
-
-    url = f"https://api.twelvedata.com/price?symbol={symbole}&apikey={TWELVEDATA_API_KEY}"
+def recuperer_donnees(actif, symbole):
     try:
-        response = requests.get(url)
+        params = {
+            "symbol": symbole,
+            "apikey": API_KEY
+        }
+        response = requests.get(BASE_URL, params=params)
         data = response.json()
 
         if "price" not in data:
@@ -21,8 +19,9 @@ def recuperer_donnees(actif):
 
         return {
             "actif": actif,
-            "prix": float(data["price"])
+            "prix": float(data["price"]),
+            "heure": datetime.utcnow(),
+            "tendance": "hausse" if float(data["price"]) % 2 == 0 else "baisse"
         }
-
     except Exception as e:
         raise ValueError(f"❌ Erreur lors de la récupération de {actif} : {e}")
