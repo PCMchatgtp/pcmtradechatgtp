@@ -1,67 +1,38 @@
-import openai
 import os
+from openai import OpenAI
 
-# Chargement de la clé API OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generer_signal_ia(donnees, tendance, heure, contexte_macro):
-    """
-    Génère une analyse de signal de trading à partir des données de marché,
-    de la tendance, de l'heure actuelle et du contexte macroéconomique.
-    """
+def generer_signal_ia(symbole, donnees, tendance, heure, contexte_macro):
     prompt = f"""
-Tu es un assistant de trading expert qui travaille en scalping sur des unités de temps très courtes (ex: 5 minutes).
+Tu es un expert en trading à court terme sur les marchés financiers.
+Ton rôle est d’analyser le marché de manière très rigoureuse et intelligente à partir des données suivantes pour détecter uniquement les opportunités de scalping ou day trading à forte probabilité.
 
-Ton objectif est de détecter UNIQUEMENT les opportunités de trade à forte probabilité, et de NE RIEN ENVOYER s'il n'y a pas de configuration évidente ou exploitable.
+Voici les données du marché :
+Actif : {symbole}
+Prix actuel : {donnees['prix']}
+Heure : {heure}
+Tendance : {tendance}
 
-Tu bases ton raisonnement sur les données suivantes :
-- Actif : {donnees['actif']}
-- Prix actuel : {donnees['prix']}
-- Variation récente : {donnees['variation']}%
-- Heure actuelle : {heure}
-- Tendance technique détectée : {tendance}
-- Contexte macro-économique : {contexte_macro}
+Voici le contexte macroéconomique à prendre en compte dans ton analyse :
+{contexte_macro}
 
-Règles impératives :
-- Pas de trade si les conditions ne sont pas claires.
-- Uniquement des trades intraday (scalping) avec sortie dans la journée.
-- Interdis les niveaux irréalistes (exemple : BTC à 105000 si le prix est à 70000).
-- Propose soit un achat (long), soit une vente (short), jamais les deux à la fois.
-- Ne propose PAS de trade si les conditions sont neutres ou trop incertaines.
-
-Format de réponse attendu :
-Analyse :
-<ton analyse en 2 phrases max>
-
-Sens du trade :
-<"Achat" ou "Vente" ou "Aucune opportunité">
-
-Entrée :
-<prix d’entrée>
-
-Stop :
-<stop loss>
-
-TP1 :
-<take profit 1>
-
-TP2 :
-<take profit 2 (optionnel)>
-
-TP3 :
-<take profit 3 (optionnel)>
-
-Remarque : Sois précis, ne répète pas d’évidences. Tu t’adresses à un trader confirmé.
-    """
+Ta tâche : 
+- Déterminer s’il existe une opportunité de trade pertinente **à très court terme**.
+- Si aucune opportunité claire et forte ne ressort, tu dois l’indiquer clairement : « Aucune opportunité pertinente actuellement. »
+- Sinon, propose un plan structuré avec : sens du trade, point d’entrée, stop, TP1 et TP2.
+- Ne propose jamais un trade si le ratio gain/risque sur TP1 est inférieur à 1:1.
+- Utilise un ton synthétique et clair, pas de blabla inutile.
+"""
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Tu peux utiliser gpt-4 si ton plan le permet
+        response = client.chat.completions.create(
+            model="gpt-4",
             messages=[
+                {"role": "system", "content": "Tu es un expert en analyse de marché et stratégie de trading."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2,
-            max_tokens=800
+            temperature=0.5,
         )
         return response.choices[0].message.content.strip()
 
