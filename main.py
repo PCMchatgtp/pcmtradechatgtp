@@ -1,32 +1,45 @@
 import asyncio
+from datetime import datetime
+import pytz
 from telegram import Bot
 from config import TOKEN, CHAT_ID, SYMBOLS
 from market_data import recuperer_donnees, analyser_tendance
 from macro_context import contexte_macro_simplifie
 from gpt_prompt import generer_signal_ia
-from datetime import datetime
-import pytz
-
-bot = Bot(token=TOKEN)
-
-def heure_locale():
-    tz = pytz.timezone("Europe/Paris")
-    return datetime.now(tz).strftime("%H:%M")
 
 async def verifier_et_envoyer_signal():
-    for actif in SYMBOLS:
+    bot = Bot(token=TOKEN)
+    maintenant = datetime.now(pytz.timezone("Europe/Paris"))
+    heure_actuelle = maintenant.hour + maintenant.minute / 60
+    heure_str = maintenant.strftime("%H:%M")
+
+    for symbole, (heure_debut, heure_fin) in SYMBOLS.items():
         try:
-            donnees = recuperer_donnees(actif)
-            tendance = analyser_tendance(donnees)
-            heure = heure_locale()
+            if not (heure_debut <= heure_actuelle <= heure_fin):
+                continue
+
+            donnees = recuperer_donnees(symbole)
+            tendance = analyser_tendance(symbole, donnees)
             contexte = contexte_macro_simplifie()
-            signal = generer_signal_ia(donnees, tendance, heure, contexte)
-            await bot.send_message(chat_id=CHAT_ID, text=signal)
+
+            message = generer_signal_ia(
+                symbole,
+                donnees,
+                tendance,
+                heure_str,
+                contexte
+            )
+
+            if message and isinstance(message, str):
+                await bot.send_message(chat_id=CHAT_ID, text=message)
+
         except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"Erreur sur {actif} : {e}")
+            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {symbole} : {e}")
 
 async def main():
-    await verifier_et_envoyer_signal()
+    while True:
+        await verifier_et_envoyer_signal()
+        await asyncio.sleep(300)  # 5 minutes
 
 if __name__ == "__main__":
     asyncio.run(main())
