@@ -1,41 +1,38 @@
+import openai
+import os
 
-from openai import OpenAI
-from config import OPENAI_API_KEY
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+def generer_signal_ia(donnees, heure):
+    prix_actuel = float(donnees[0]["close"])
+    prix_passe = [float(candle["close"]) for candle in donnees[1:]]
 
-def generer_signal_ia(donnees, heure, contexte_macro):
-    try:
-        prompt = f"""
-Tu es un assistant expert en scalping sur les marchés financiers.
-Voici les données du marché :
+    tendance = "hausse" if prix_actuel > max(prix_passe) else "baisse"
+    variation = prix_actuel - prix_passe[-1]
 
-Actif : {donnees['actif']}
-Prix actuel : {donnees['prix']}
-Heure : {heure}h
-Contexte macroéconomique : {contexte_macro["résumé"]}
+    prompt = f"""
+Voici des données de marché en temps réel pour un actif. L'heure actuelle est {heure}h UTC.
+- Tendance actuelle : {tendance}
+- Prix actuel : {prix_actuel}
+- Évolution récente : {variation:+.2f}
 
-Ta tâche est de déterminer s'il y a une opportunité de trade à court terme (scalping), uniquement si la probabilité de réussite est élevée.
+Génère un commentaire d'analyse technique comme si tu étais un expert en trading. Propose un plan de trade avec :
+1. Sens (achat ou vente),
+2. Niveau d'entrée,
+3. Stop loss,
+4. TP1 (objectif minimum),
+5. Un taux de réussite estimé (en %),
+6. Justification concise de l’opportunité.
 
-Tu dois répondre uniquement dans ce format :
----
-Sens du trade : Achat / Vente / Aucun
-Entrée : [prix]
-Stop : [prix]
-TP1 : [prix]
-TP2 : [prix facultatif]
-TP3 : [prix facultatif]
-Commentaire : [explication concise]
----
+Refuse de proposer un trade s’il n’y a pas d’opportunité réelle avec un bon risk:reward (TP1 - Entrée ≥ Entrée - Stop).
 """
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
+    reponse = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
 
-        return response.choices[0].message.content.strip()
-
-    except Exception as e:
-        return f"❌ Erreur GPT : {e}"
+    message = reponse.choices[0].message.content.strip()
+    if "aucune opportunité" in message.lower():
+        return None
+    return message
