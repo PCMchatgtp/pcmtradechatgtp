@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 import pytz
 from telegram import Bot
-from config import TOKEN, CHAT_ID, SYMBOLS, twelve_data_api_key
+from config import TOKEN, CHAT_ID, SYMBOLS, TWELVE_DATE_API_KEY
 from market_data import recuperer_donnees, analyser_tendance
 from gpt_prompt import generer_signal_ia
 
