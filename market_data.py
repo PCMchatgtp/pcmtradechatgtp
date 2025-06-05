@@ -17,7 +17,7 @@ def recuperer_donnees(actif):
     params = {
         "symbol": symbole,
         "interval": "5min",
-        "apikey": API_KEY,
+        "apikey": TWELVE_DATA_API_KEY,
         "outputsize": 2
     }
 
