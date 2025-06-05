@@ -11,5 +11,5 @@ TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 SYMBOLS = {
     "XAUUSD": {"symbol": "XAU/USD", "heure_debut": 7, "heure_fin": 22},
     "BTCUSD": {"symbol": "BTC/USD", "heure_debut": 7, "heure_fin": 22},
-    "NASDAQ": {"symbol": "NDX", "heure_debut": 15, "heure_fin": 18},
+    "NASDAQ": {"symbol": "NDX/USD", "heure_debut": 15, "heure_fin": 18},
 }
