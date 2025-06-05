@@ -1,37 +1,27 @@
 import requests
+import datetime
 
-SYMBOLS_MAPPING = {
-    "XAUUSD": "XAU/USD",
-    "BTCUSD": "BTC/USD",
-    "NASDAQ": "QQQ"
-}
-
-from config import TWELVE_DATA_API_KEY
-
-def recuperer_donnees(actif):
-    symbole = SYMBOLS_MAPPING.get(actif)
-    if not symbole:
-        raise ValueError(f"❌ Symbole introuvable pour {actif}")
-
-    url = f"https://api.twelvedata.com/time_series"
-    params = {
-        "symbol": symbole,
-        "interval": "5min",
-        "apikey": TWELVE_DATA_API_KEY,
-        "outputsize": 2
-    }
-
-    response = requests.get(url, params=params)
+def recuperer_donnees(symbole, twelve_data_api_key):
+    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&apikey={twelve_data_api_key}&outputsize=2"
+    response = requests.get(url)
     data = response.json()
 
     if "status" in data and data["status"] == "error":
-        raise ValueError(f"❌ Données invalides de TwelveData pour {actif} : {data}")
+        raise ValueError(f"❌ Données invalides de TwelveData pour {symbole} : {data}")
 
     try:
-        latest = data["values"][0]
-        return {
-            "prix": float(latest["close"]),
-            "timestamp": latest["datetime"]
-        }
-    except (KeyError, IndexError, ValueError) as e:
-        raise ValueError(f"❌ Erreur lors du parsing des données {actif} : {e}")
+        dernier_cours = float(data["values"][0]["close"])
+        precedent_cours = float(data["values"][1]["close"])
+        return {"prix": dernier_cours, "precedent": precedent_cours}
+    except Exception as e:
+        raise ValueError(f"❌ Erreur lors de l'extraction des cours : {e}")
+
+def analyser_tendance(donnees):
+    prix = donnees["prix"]
+    precedent = donnees["precedent"]
+    if prix > precedent:
+        return "hausse"
+    elif prix < precedent:
+        return "baisse"
+    else:
+        return "neutre"
