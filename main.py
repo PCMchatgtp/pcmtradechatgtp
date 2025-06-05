@@ -1,39 +1,40 @@
-
+import os
 import asyncio
 from datetime import datetime
 import pytz
 from telegram import Bot
-from config import TOKEN, CHAT_ID, SYMBOLS
+from config import TOKEN, CHAT_ID, SYMBOLS, twelve_data_api_key
 from market_data import recuperer_donnees, analyser_tendance
-from macro_context import contexte_macro_simplifie
 from gpt_prompt import generer_signal_ia
 
 bot = Bot(token=TOKEN)
 
 async def verifier_et_envoyer_signal():
-    for actif in SYMBOLS:
-        try:
-            symbole = SYMBOLS[actif]
-            donnees = recuperer_donnees(symbole)
-            tendance = analyser_tendance(donnees)
-            heure = datetime.now(pytz.timezone("Europe/Paris")).strftime("%H:%M")
-            contexte_macro = contexte_macro_simplifie()
-            message = generer_signal_ia(
-                actif=actif,
-                donnees=donnees,
-                tendance=tendance,
-                heure=heure,
-                contexte_macro=contexte_macro
-            )
-            if message:
-                await bot.send_message(chat_id=CHAT_ID, text=message)
-        except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {actif} : {e}")
+    heure_actuelle = datetime.now(pytz.timezone("Europe/Paris"))
+    heure = heure_actuelle.strftime("%H:%M")
+    actif_autorises = []
 
-async def main():
+    if heure_actuelle.hour >= 7 and heure_actuelle.hour < 22:
+        actif_autorises += ["XAUUSD", "BTCUSD"]
+    if heure_actuelle.hour >= 15 and heure_actuelle.hour < 18:
+        actif_autorises += ["NASDAQ"]
+
+    for symbole in actif_autorises:
+        try:
+            donnees = recuperer_donnees(SYMBOLS[symbole], twelve_data_api_key)
+            tendance = analyser_tendance(donnees)
+
+            signal = generer_signal_ia(symbole, donnees["prix"], tendance, heure)
+
+            if signal:
+                await bot.send_message(chat_id=CHAT_ID, text=signal)
+        except Exception as e:
+            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {symbole} : {e}")
+
+async def boucle():
     while True:
         await verifier_et_envoyer_signal()
-        await asyncio.sleep(300)  # toutes les 5 minutes
+        await asyncio.sleep(300)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(boucle())
