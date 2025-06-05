@@ -1,15 +1,12 @@
 import requests
-import os
-from datetime import datetime
-import pytz
-
-API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 SYMBOLS_MAPPING = {
     "XAUUSD": "XAU/USD",
     "BTCUSD": "BTC/USD",
-    "NASDAQ": "NDX/USD"  # Assure-toi que ce symbole est bien reconnu par Twelve Data
+    "NASDAQ": "QQQ"
 }
+
+from config import API_KEY
 
 def recuperer_donnees(actif):
     symbole = SYMBOLS_MAPPING.get(actif)
@@ -38,16 +35,3 @@ def recuperer_donnees(actif):
         }
     except (KeyError, IndexError, ValueError) as e:
         raise ValueError(f"❌ Erreur lors du parsing des données {actif} : {e}")
-
-def analyser_tendance(donnees):
-    # Simpliste : on compare les deux derniers cours
-    try:
-        prix_actuel = float(donnees["prix"])
-        return "hausse" if prix_actuel > 0 else "baisse"  # à personnaliser selon ta logique réelle
-    except:
-        return "indéterminée"
-
-def heure_actuelle():
-    paris_tz = pytz.timezone("Europe/Paris")
-    maintenant = datetime.now(paris_tz)
-    return maintenant.strftime("%H:%M")
