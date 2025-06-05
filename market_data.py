@@ -1,16 +1,53 @@
 import requests
 import os
+from datetime import datetime
+import pytz
 
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
-def recuperer_donnees(symbole):
-    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&apikey={TWELVE_DATA_API_KEY}&outputsize=1"
-    reponse = requests.get(url)
-    data = reponse.json()
+SYMBOLS_MAPPING = {
+    "XAUUSD": "XAU/USD",
+    "BTCUSD": "BTC/USD",
+    "NASDAQ": "NDX/USD"  # Assure-toi que ce symbole est bien reconnu par Twelve Data
+}
 
-    if "values" not in data:
-        raise ValueError(f"❌ Données invalides de TwelveData pour {symbole} : {data}")
+def recuperer_donnees(actif):
+    symbole = SYMBOLS_MAPPING.get(actif)
+    if not symbole:
+        raise ValueError(f"❌ Symbole introuvable pour {actif}")
 
-    derniere = data["values"][0]
-    prix = float(derniere["close"])
-    return {"symbole": symbole, "prix": prix}
+    url = f"https://api.twelvedata.com/time_series"
+    params = {
+        "symbol": symbole,
+        "interval": "5min",
+        "apikey": API_KEY,
+        "outputsize": 2
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if "status" in data and data["status"] == "error":
+        raise ValueError(f"❌ Données invalides de TwelveData pour {actif} : {data}")
+
+    try:
+        latest = data["values"][0]
+        return {
+            "prix": float(latest["close"]),
+            "timestamp": latest["datetime"]
+        }
+    except (KeyError, IndexError, ValueError) as e:
+        raise ValueError(f"❌ Erreur lors du parsing des données {actif} : {e}")
+
+def analyser_tendance(donnees):
+    # Simpliste : on compare les deux derniers cours
+    try:
+        prix_actuel = float(donnees["prix"])
+        return "hausse" if prix_actuel > 0 else "baisse"  # à personnaliser selon ta logique réelle
+    except:
+        return "indéterminée"
+
+def heure_actuelle():
+    paris_tz = pytz.timezone("Europe/Paris")
+    maintenant = datetime.now(paris_tz)
+    return maintenant.strftime("%H:%M")
