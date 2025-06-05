@@ -6,7 +6,7 @@ SYMBOLS_MAPPING = {
     "NASDAQ": "QQQ"
 }
 
-from config import API_KEY
+from config import TWELVE_DATA_API_KEY
 
 def recuperer_donnees(actif):
     symbole = SYMBOLS_MAPPING.get(actif)
