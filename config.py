@@ -9,9 +9,9 @@ TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 API_KEY_OPENAI = os.getenv("API_KEY_OPENAI")
 SYMBOLS = {
-    "XAUUSD": "XAU/USD",
-    "BTCUSD": "BTC/USD",
-    "NASDAQ": "NDX"
+    "XAUUSD": {"symbol": "XAU/USD", "heure_debut": 7, "heure_fin": 22},
+    "BTCUSD": {"symbol": "BTC/USD", "heure_debut": 7, "heure_fin": 22},
+    "NASDAQ": {"symbol": "NDX", "heure_debut": 15, "heure_fin": 18},
 }
 
 
