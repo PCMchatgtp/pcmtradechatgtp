@@ -5,7 +5,7 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+TWELVE_DATA_API_KEY = os.getenv("twelve_data_api_key")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 API_KEY_OPENAI = os.getenv("API_KEY_OPENAI")
 SYMBOLS = {
