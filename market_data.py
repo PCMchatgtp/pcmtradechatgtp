@@ -1,14 +1,16 @@
 import requests
+import os
+
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 def recuperer_donnees(symbole):
-    from config import os
-
-    api_key = os.getenv("TWELVE_DATA_API_KEY")
-    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&apikey={api_key}&outputsize=5"
-    r = requests.get(url)
-    data = r.json()
+    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&apikey={TWELVE_DATA_API_KEY}&outputsize=1"
+    reponse = requests.get(url)
+    data = reponse.json()
 
     if "values" not in data:
         raise ValueError(f"❌ Données invalides de TwelveData pour {symbole} : {data}")
 
-    return data["values"]
+    derniere = data["values"][0]
+    prix = float(derniere["close"])
+    return {"symbole": symbole, "prix": prix}
