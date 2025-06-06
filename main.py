@@ -1,4 +1,3 @@
-import os
 import asyncio
 from datetime import datetime
 import pytz
@@ -10,31 +9,19 @@ from gpt_prompt import generer_signal_ia
 bot = Bot(token=TOKEN)
 
 async def verifier_et_envoyer_signal():
-    heure_actuelle = datetime.now(pytz.timezone("Europe/Paris"))
-    heure = heure_actuelle.strftime("%H:%M")
-    actif_autorises = []
+    paris_tz = pytz.timezone('Europe/Paris')
+    heure_actuelle = datetime.now(paris_tz).time()
 
-    if heure_actuelle.hour >= 7 and heure_actuelle.hour < 22:
-        actif_autorises += ["XAUUSD", "BTCUSD"]
-    if heure_actuelle.hour >= 15 and heure_actuelle.hour < 18:
-        actif_autorises += ["NASDAQ"]
-
-    for symbole in actif_autorises:
+    for symbole, meta in SYMBOLS.items():
         try:
-            donnees = recuperer_donnees(SYMBOLS[symbole], TWELVE_DATA_API_KEY)
-            tendance = analyser_tendance(donnees)
+            cours = recuperer_donnees(meta["twelve"], TWELVE_DATA_API_KEY)
+            tendance = analyser_tendance(cours)
+            heure = datetime.now(paris_tz).strftime("%H:%M")
+            analyse = generer_signal_ia(symbole, cours, tendance, heure)
 
-            signal = generer_signal_ia(symbole, donnees["prix"], tendance, heure)
-
-            if signal:
-                await bot.send_message(chat_id=CHAT_ID, text=signal)
+            await bot.send_message(chat_id=CHAT_ID, text=f"📊 Analyse pour {meta['nom']} :\n{analyse}")
         except Exception as e:
             await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {symbole} : {e}")
 
-async def boucle():
-    while True:
-        await verifier_et_envoyer_signal()
-        await asyncio.sleep(300)
-
 if __name__ == "__main__":
-    asyncio.run(boucle())
+    asyncio.run(verifier_et_envoyer_signal())

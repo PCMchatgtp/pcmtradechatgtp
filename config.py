@@ -5,15 +5,10 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-API_KEY_OPENAI = os.getenv("API_KEY_OPENAI")
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+
 SYMBOLS = {
-    "XAUUSD": {"symbol": "XAU/USD", "heure_debut": 7, "heure_fin": 22},
-    "BTCUSD": {"symbol": "BTC/USD", "heure_debut": 7, "heure_fin": 22},
-    "NASDAQ": {"symbol": "NDX", "heure_debut": 15, "heure_fin": 18},
+    "XAUUSD": {"twelve": "XAU/USD", "nom": "Gold"},
+    "BTCUSD": {"twelve": "BTC/USD", "nom": "Bitcoin"}
 }
-
-
-if not all([TOKEN, CHAT_ID, TWELVE_DATA_API_KEY]):
-    raise ValueError("❌ Variable d'environnement manquante.")
