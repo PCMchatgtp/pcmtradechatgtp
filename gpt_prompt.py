@@ -7,7 +7,7 @@ Décision déterminée par l'intelligence artificielle après analyse complète.
 Tendance : {tendance}
 Prix actuel : {donnees['price']}
 Volume : {donnees['volume']}
-"
+"""
         commentaire += "✅ Opportunité détectée" if tendance == "haussière" else "⚠️ Prudence recommandée"
         return commentaire
     except Exception as e:
