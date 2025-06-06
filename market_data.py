@@ -1,25 +1,31 @@
-def analyser_tendance(cours):
-    """
-    Analyse simple de la tendance sur les 10 dernières bougies :
-    - retourne 'hausse' si majorité de hausses
-    - 'baisse' si majorité de baisses
-    - sinon 'indécise'
-    """
-    if not cours or len(cours) < 2:
-        return "indécise"
+import requests
 
-    hausses = 0
-    baisses = 0
+def recuperer_donnees(symbole, twelve_data_api_key):
+    url = f"https://api.twelvedata.com/time_series"
+    params = {
+        "symbol": symbole,
+        "interval": "5min",
+        "outputsize": 30,
+        "apikey": twelve_data_api_key,
+        "format": "JSON"
+    }
 
-    for i in range(1, len(cours)):
-        if cours[i]["close"] > cours[i-1]["close"]:
-            hausses += 1
-        elif cours[i]["close"] < cours[i-1]["close"]:
-            baisses += 1
+    reponse = requests.get(url, params=params)
+    data = reponse.json()
 
-    if hausses > baisses:
-        return "hausse"
-    elif baisses > hausses:
-        return "baisse"
-    else:
-        return "indécise"
+    if "values" not in data:
+        raise ValueError(f"❌ Erreur lors de l'extraction des cours : {data}")
+
+    cours = [
+        {
+            "datetime": point["datetime"],
+            "open": float(point["open"]),
+            "high": float(point["high"]),
+            "low": float(point["low"]),
+            "close": float(point["close"]),
+            "volume": float(point.get("volume", 0))
+        }
+        for point in data["values"]
+    ]
+
+    return cours
