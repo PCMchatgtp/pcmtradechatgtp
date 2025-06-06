@@ -21,7 +21,7 @@ async def verifier_et_envoyer_signal():
 
     for symbole in actif_autorises:
         try:
-            donnees = recuperer_donnees(SYMBOLS[symbole], twelve_data_api_key)
+            donnees = recuperer_donnees(SYMBOLS[symbole], TWELVE_DATA_API_KEY)
             tendance = analyser_tendance(donnees)
 
             signal = generer_signal_ia(symbole, donnees["prix"], tendance, heure)
