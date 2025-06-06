@@ -11,7 +11,7 @@ async def analyser_et_envoyer():
     for symbole in SYMBOLS:
         try:
             print(f"Analyse de {symbole}...")
-            donnees = recuperer_donnees(symbole, twelve_data_api_key)
+            donnees = recuperer_donnees(symbole, TWELVE_DATA_API_KEY)
             signal = generer_signal_ia(symbole, donnees, OPENAI_API_KEY)
             if signal:
                 await bot.send_message(chat_id=CHAT_ID, text=signal)
