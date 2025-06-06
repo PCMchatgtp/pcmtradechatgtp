@@ -1,7 +1,7 @@
 
 import asyncio
 from telegram import Bot
-from config import TOKEN, CHAT_ID, SYMBOLS, OPENAI_API_KEY, twelve_data_api_key
+from config import TOKEN, CHAT_ID, SYMBOLS, OPENAI_API_KEY, TWELVE_DATA_API_KEY
 from market_data import recuperer_donnees
 from gpt_prompt import generer_signal_ia
 
