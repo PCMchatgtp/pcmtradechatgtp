@@ -1,34 +1,41 @@
+
 import requests
+from datetime import datetime
 
-def recuperer_donnees(symbole_twelve, twelve_data_api_key):
-    url = f"https://api.twelvedata.com/time_series?symbol={symbole_twelve}&interval=5min&outputsize=2&apikey={twelve_data_api_key}"
-    response = requests.get(url)
+from config import TWELVE_DATA_API_KEY
+
+def recuperer_donnees(symbole):
+    base_url = "https://api.twelvedata.com/time_series"
+    params = {
+        "symbol": symbole,
+        "interval": "5min",
+        "outputsize": 1,
+        "apikey": TWELVE_DATA_API_KEY
+    }
+    response = requests.get(base_url, params=params)
     data = response.json()
-
     if "values" not in data:
         raise ValueError(f"❌ Erreur lors de l'extraction des cours : {data}")
 
-    cours = []
-    for point in data["values"]:
-        cours.append({
-            "timestamp": point["datetime"],
-            "open": float(point["open"]),
-            "high": float(point["high"]),
-            "low": float(point["low"]),
-            "close": float(point["close"]),
-            "volume": float(point["volume"]),
-        })
+    dernier = data["values"][0]
+    prix = float(dernier["close"])
+    volume = float(dernier.get("volume", 0.0))
+    heure = datetime.now().strftime("%H:%M")
 
-    return cours
+    # Simuler d'autres indicateurs (à affiner selon accès réel)
+    rsi = 50.0  # valeur neutre fictive
+    ema = prix
+    macd = 0.0
 
-def analyser_tendance(cours):
-    if len(cours) < 2:
-        return "indécise"
-    dernier_close = cours[0]["close"]
-    précédent_close = cours[1]["close"]
-    if dernier_close > précédent_close:
-        return "haussière"
-    elif dernier_close < précédent_close:
-        return "baissière"
-    else:
-        return "indécise"
+    # Déterminer tendance simple
+    tendance = "hausse" if float(dernier["close"]) > float(dernier["open"]) else "baisse"
+
+    return {
+        "prix": prix,
+        "volume": volume,
+        "heure": heure,
+        "rsi": rsi,
+        "ema": ema,
+        "macd": macd,
+        "tendance": tendance
+    }

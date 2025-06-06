@@ -1,26 +1,30 @@
+
 import openai
-from datetime import datetime
+from config import OPENAI_API_KEY
 
-def generer_signal_ia(symbole, cours, tendance, heure):
-    dernier_close = cours[0]["close"]
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
-    prompt = f"""
-Tu es un assistant de trading. Voici les informations de marché :
-Symbole : {symbole}
-Prix actuel : {dernier_close}
-Tendance actuelle : {tendance}
-Heure actuelle : {heure}
+def generer_signal_ia(symbole, tendance, heure, prix, volume, rsi, ema, macd):
+    prompt = f'''
+Tu es un expert en trading algorithmique. Voici les données de marché pour {symbole} :
+- Heure : {heure}
+- Prix : {prix}
+- Volume : {volume}
+- RSI : {rsi}
+- EMA : {ema}
+- MACD : {macd}
+- Tendance : {tendance}
 
-Analyse les données et indique s’il y a une opportunité de trade claire. Si oui, donne le sens (achat/vente), un point d’entrée, un stop loss, et deux take profits. Termine par une estimation du pourcentage de probabilité de succès.
+Analyse ces données et indique s’il y a une opportunité de trade. Donne un signal clair : Achat, Vente, ou Rien faire. Justifie ta réponse brièvement.
+Ajoute une estimation du taux de réussite en pourcentage.
 
-Réponds de manière concise et exploitable immédiatement.
-"""
-
+Réponse :
+'''
     try:
         completion = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300
         )
         return completion.choices[0].message["content"]
     except Exception as e:
