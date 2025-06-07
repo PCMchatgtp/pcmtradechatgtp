@@ -4,23 +4,25 @@ from config import OPENAI_API_KEY
 openai.api_key = OPENAI_API_KEY
 
 def generer_signal_ia(symbole, donnees):
-    dernier_cours = donnees[0]
-    prompt = f"""
-Tu es un expert en trading. Voici les dernières données de marché pour {symbole} :
-{dernier_cours}
+    dernier = donnees[0]
+    texte = f"Voici les dernières données pour {symbole} :\n{dernier}"
 
-Analyse la tendance actuelle et dis s'il y a une opportunité de trade à très court terme.
-Précise :
-- Le sens du trade (achat ou vente)
-- Un point d’entrée
-- Un stop loss
-- Un ou plusieurs take profit
-- Un commentaire court expliquant la décision
-- Un taux de probabilité de réussite estimé
-"""
+    prompt = f"""
+    Analyse technique basée sur : {texte}
+
+    Donne uniquement s'il y a une opportunité de trade crédible.
+    Réponds en précisant :
+    - Le sens du trade (achat ou vente)
+    - Le point d’entrée
+    - Un stop
+    - TP1, TP2
+    - Un commentaire d’IA expliquant brièvement pourquoi, avec un pourcentage de fiabilité estimé.
+    Ne propose rien si la configuration n’est pas claire.
+    """
 
     reponse = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.4
     )
-    return reponse.choices[0].message["content"]
+    return reponse.choices[0].message["content"].strip()
