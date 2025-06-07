@@ -1,27 +1,23 @@
-
 import openai
+import os
 
-def generer_signal_ia(symbole, heure, indicateurs, openai_api_key):
-    openai.api_key = openai_api_key
+def generer_signal_ia(symbole, donnees, heure, indicateurs):
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
+    dernier_cours = donnees[0]["close"]
 
     prompt = f"""
-Tu es un analyste financier. Voici les données pour {symbole} à {heure} :
+Tu es un analyste financier IA. Voici les données pour {symbole} :
+- Heure : {heure}
+- Cours actuel : {dernier_cours}
+- Moyenne des clôtures : {indicateurs['close_moyenne']}
+- Volume moyen : {indicateurs['volume_moyen']}
 
-Indicateurs :
-{indicateurs}
-
-Donne une recommandation claire de trading avec :
-- Sens du trade (achat ou vente)
-- Point d’entrée
-- Stop loss
-- Take profit
-- Taux de probabilité de succès (en %)
-- Un commentaire synthétique justifiant la recommandation
+Donne une analyse simple avec une opportunité de trade (achat ou vente), un stop, un TP1 et un taux de confiance estimé entre 0 et 100%.
 """
 
-    response = openai.chat.completions.create(
+    completion = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-
-    return response.choices[0].message.content.strip()
+    return completion.choices[0].message["content"]

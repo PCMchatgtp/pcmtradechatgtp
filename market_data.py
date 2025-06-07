@@ -1,24 +1,28 @@
-
 import requests
-from datetime import datetime
 
 def recuperer_donnees(symbole, api_key):
-    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&outputsize=1&apikey={api_key}"
-    reponse = requests.get(url)
-    data = reponse.json()
+    url = f"https://api.twelvedata.com/time_series"
+    params = {
+        "symbol": symbole,
+        "interval": "5min",
+        "outputsize": 5,
+        "apikey": api_key
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
 
-    if 'values' not in data:
+    if "values" not in data:
         raise ValueError(f"❌ Erreur lors de l'extraction des cours : {data}")
 
-    derniere = data["values"][0]
-    heure = derniere["datetime"]
+    donnees = data["values"]
+
+    # Indicateurs simples
+    volumes = [float(candle["volume"]) for candle in donnees if "volume" in candle]
+    close_prices = [float(candle["close"]) for candle in donnees]
 
     indicateurs = {
-        "open": derniere["open"],
-        "high": derniere["high"],
-        "low": derniere["low"],
-        "close": derniere["close"],
-        "volume": derniere.get("volume", "Non disponible")
+        "volume_moyen": sum(volumes) / len(volumes) if volumes else 0,
+        "close_moyenne": sum(close_prices) / len(close_prices) if close_prices else 0
     }
 
-    return {"heure": heure, "indicateurs": indicateurs}
+    return donnees, indicateurs

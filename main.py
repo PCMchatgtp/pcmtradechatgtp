@@ -1,25 +1,22 @@
-
-import asyncio
-from telegram import Bot
-from config import TOKEN, CHAT_ID, TWELVE_DATA_API_KEY, OPENAI_API_KEY
+import time
+from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, SYMBOLS, TWELVE_DATA_API_KEY, OPENAI_API_KEY
+from telegram_notifier import envoyer_message
 from market_data import recuperer_donnees
 from gpt_prompt import generer_signal_ia
 
-SYMBOLS = {
-    "XAUUSD": "XAU/USD",
-    "BTCUSD": "BTC/USD",
-    "QQQ": "NASDAQ"
-}
+import datetime
 
-bot = Bot(token=TOKEN)
-
-async def analyse_et_envoi():
-    for symbole, nom_affiche in SYMBOLS.items():
+def analyse():
+    for symbole in SYMBOLS:
         try:
-            donnees = recuperer_donnees(symbole, TWELVE_DATA_API_KEY)
-            signal = generer_signal_ia(symbole, donnees['heure'], donnees['indicateurs'], OPENAI_API_KEY)
-            await bot.send_message(chat_id=CHAT_ID, text=signal)
+            maintenant = datetime.datetime.now().strftime("%H:%M")
+            donnees, indicateurs = recuperer_donnees(symbole, TWELVE_DATA_API_KEY)
+            message = generer_signal_ia(symbole, donnees, maintenant, indicateurs)
+            envoyer_message(TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, message)
         except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {nom_affiche} : {e}")
+            envoyer_message(TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, f"❌ Erreur sur {symbole} : {str(e)}")
 
-asyncio.run(analyse_et_envoi())
+if __name__ == "__main__":
+    while True:
+        analyse()
+        time.sleep(300)
