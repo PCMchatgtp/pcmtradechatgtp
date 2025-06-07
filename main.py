@@ -1,26 +1,25 @@
+
 import asyncio
-from config import TOKEN, CHAT_ID, SYMBOLS, twelve_data_api_key
 from telegram import Bot
+from config import TOKEN, CHAT_ID, TWELVE_DATA_API_KEY, OPENAI_API_KEY
 from market_data import recuperer_donnees
 from gpt_prompt import generer_signal_ia
 
+SYMBOLS = {
+    "XAUUSD": "XAU/USD",
+    "BTCUSD": "BTC/USD",
+    "QQQ": "NASDAQ"
+}
+
 bot = Bot(token=TOKEN)
 
-async def verifier_et_envoyer_signal():
-    for symbole in SYMBOLS:
+async def analyse_et_envoi():
+    for symbole, nom_affiche in SYMBOLS.items():
         try:
-            print(f"Analyse de {symbole}...")
-            donnees = recuperer_donnees(symbole, twelve_data_api_key)
-            signal = generer_signal_ia(symbole, donnees)
-            if signal:
-                await bot.send_message(chat_id=CHAT_ID, text=signal)
+            donnees = recuperer_donnees(symbole, TWELVE_DATA_API_KEY)
+            signal = generer_signal_ia(symbole, donnees['heure'], donnees['indicateurs'], OPENAI_API_KEY)
+            await bot.send_message(chat_id=CHAT_ID, text=signal)
         except Exception as e:
-            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {symbole} : {e}")
+            await bot.send_message(chat_id=CHAT_ID, text=f"❌ Erreur sur {nom_affiche} : {e}")
 
-async def boucle():
-    while True:
-        await verifier_et_envoyer_signal()
-        await asyncio.sleep(300)  # 5 minutes
-
-if __name__ == "__main__":
-    asyncio.run(boucle())
+asyncio.run(analyse_et_envoi())
