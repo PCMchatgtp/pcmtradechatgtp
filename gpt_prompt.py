@@ -1,28 +1,33 @@
-import openai
-from config import OPENAI_API_KEY
+from openai import OpenAI
+import os
 
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generer_signal_ia(symbole, donnees):
-    dernier = donnees[0]
-    texte = f"Voici les dernières données pour {symbole} :\n{dernier}"
-
+def generer_signal_ia(symbole, tendance, heure, indicateurs):
     prompt = f"""
-    Analyse technique basée sur : {texte}
+    Tu es un analyste financier professionnel. Tu dois générer une analyse de marché sur l'actif {symbole} basé sur :
 
-    Donne uniquement s'il y a une opportunité de trade crédible.
-    Réponds en précisant :
-    - Le sens du trade (achat ou vente)
-    - Le point d’entrée
-    - Un stop
-    - TP1, TP2
-    - Un commentaire d’IA expliquant brièvement pourquoi, avec un pourcentage de fiabilité estimé.
-    Ne propose rien si la configuration n’est pas claire.
+    - la tendance actuelle : {tendance}
+    - l’heure de l’analyse : {heure}
+    - les indicateurs techniques suivants : {indicateurs}
+
+    Génère une stratégie claire avec :
+    - un point d’entrée
+    - un stop loss
+    - un ou plusieurs take profits
+    - un pourcentage de probabilité de réussite
+    - un court commentaire stratégique justifiant le plan proposé
+
+    Format clair et structuré.
     """
 
-    reponse = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
+        messages=[
+            {"role": "system", "content": "Tu es un expert en trading algorithmique."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
     )
-    return reponse.choices[0].message["content"].strip()
+
+    return response.choices[0].message.content.strip()
