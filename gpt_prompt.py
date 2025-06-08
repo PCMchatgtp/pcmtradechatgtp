@@ -1,12 +1,21 @@
 from openai import OpenAI
 from config import OPENAI_API_KEY
+from datetime import datetime
+import pytz
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generer_signal_ia(symbole, heure, indicateurs):
     try:
+        # Ajout du contexte horaire
+        paris_tz = pytz.timezone("Europe/Paris")
+        now = datetime.now(paris_tz)
+        jour = now.strftime("%A")
+        heure_locale = now.strftime("%H:%M")
+
         prompt = (
-            f"Tu es un expert en trading algorithmique. Ton rôle est de générer un plan de trading clair et structuré.\n"
+            f"Tu es un expert en trading algorithmique. Nous sommes {jour} et il est {heure_locale} à Paris.\n"
+            f"Ton rôle est de générer un plan de trading clair et structuré.\n"
             f"Analyse les données suivantes pour {symbole} à {heure} :\n\n"
             f"{indicateurs}\n\n"
             f"Détermine :\n"
