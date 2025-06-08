@@ -22,5 +22,9 @@ async def analyser_actifs():
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
 
+import time
+
 if __name__ == "__main__":
-    asyncio.run(analyser_actifs())
+    while True:
+        asyncio.run(analyser_actifs())
+        time.sleep(3600)  # Pause d'une heure (3600 secondes) entre chaque analyse globale
