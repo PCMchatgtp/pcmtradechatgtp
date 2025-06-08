@@ -1,24 +1,26 @@
 from config import OPENAI_API_KEY, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, SYMBOLS
 from market_data import recuperer_donnees
 from gpt_prompt import generer_signal_ia
+import asyncio
 from telegram_bot import envoyer_message
 import os
-from datetime import datetime
-import pytz
 
-api_key = os.getenv("TWELVE_DATA_API_KEY")
-paris = pytz.timezone("Europe/Paris")
-maintenant = datetime.now(paris).strftime("%Y-%m-%d %H:%M:%S")
+print("✅ Imports réussis et clé OpenAI chargée :", bool(OPENAI_API_KEY))
 
-resume = f"📊 Analyse globale {maintenant}\n"
+API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
-for symbole in SYMBOLS:
-    try:
-        tendance, heure, indicateurs = recuperer_donnees(symbole, api_key)
-        message = generer_signal_ia(symbole, tendance, heure, indicateurs)
-        envoyer_message(f"💡 {symbole}\n{message}")
-        resume += f"✅ {symbole}\n"
-    except Exception as e:
-        resume += f"❌ {symbole} : {e}\n"
+async def analyser_actifs():
+    symboles = SYMBOLS.split(",")
+    resume_global = "📊 Analyse globale\n"
+    for symbole in symboles:
+        try:
+            heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
+            analyse = generer_signal_ia(symbole, heure, indicateurs)
+            await envoyer_message(f"💡 {symbole} ({heure})\n{analyse}")
+            resume_global += f"✅ {symbole}\n"
+        except Exception as e:
+            resume_global += f"❌ {symbole} : {e}\n"
+    await envoyer_message(resume_global)
 
-envoyer_message(resume.strip())
+if __name__ == "__main__":
+    asyncio.run(analyser_actifs())
