@@ -1,17 +1,26 @@
-from openai import OpenAI
+import openai
 from config import OPENAI_API_KEY
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = OPENAI_API_KEY
 
-def generer_signal_ia(symbole, heure, indicateurs):
-    try:
-        reponse = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Tu es un expert en trading."},
-                {"role": "user", "content": f"Donne une analyse pour {symbole} à {heure} avec ces données : {indicateurs}"}
-            ]
-        )
-        return reponse.choices[0].message.content
-    except Exception as e:
-        return f"❌ Erreur GPT pour {symbole} : {e}"
+def generer_signal_ia(symbole, donnees, heure, indicateurs):
+    prompt = f"""
+Analyse le marché {symbole} à {heure} avec les données suivantes :
+- Open : {indicateurs['open']}
+- High : {indicateurs['high']}
+- Low : {indicateurs['low']}
+- Close : {indicateurs['close']}
+- Volume : {indicateurs['volume']}
+
+Donne une recommandation claire :
+- Prise de position ou non
+- Direction (achat ou vente)
+- Niveau d'entrée, stop, TP1, TP2, TP3
+- Contexte de la décision
+"""
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return completion.choices[0].message["content"].strip()
