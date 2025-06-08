@@ -1,7 +1,7 @@
 from telegram import Bot
-from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+from config import TOKEN, CHAT_ID
 
-bot = Bot(token=TELEGRAM_TOKEN)
+bot = Bot(token=TOKEN)
 
-def envoyer_message(message):
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+async def envoyer_message(message):
+    await bot.send_message(chat_id=CHAT_ID, text=message)

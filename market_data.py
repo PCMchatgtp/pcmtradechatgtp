@@ -1,32 +1,16 @@
 import requests
 from config import OPENAI_API_KEY
-from datetime import datetime
-import pytz
 
 def recuperer_donnees(symbole):
-    base_url = "https://api.twelvedata.com/time_series"
-    params = {
-        "symbol": symbole,
-        "interval": "5min",
-        "outputsize": 1,
-        "apikey": OPENAI_API_KEY
-    }
-
-    response = requests.get(base_url, params=params)
+    # Ceci est un exemple factice, remplacer avec votre appel réel à Twelve Data
+    response = requests.get(f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&apikey={OPENAI_API_KEY}")
     data = response.json()
 
-    if "values" not in data:
+    if 'values' not in data:
         raise ValueError(f"❌ Erreur lors de l'extraction des cours : {data}")
 
-    valeurs = data["values"][0]
-    heure = datetime.now(pytz.timezone("Europe/Paris")).strftime("%H:%M:%S")
+    values = data['values']
+    heure = values[0]['datetime']
+    indicateurs = {"volume": values[0].get("volume", "N/A")}
 
-    indicateurs = {
-        "open": float(valeurs["open"]),
-        "high": float(valeurs["high"]),
-        "low": float(valeurs["low"]),
-        "close": float(valeurs["close"]),
-        "volume": float(valeurs["volume"])
-    }
-
-    return valeurs, heure, indicateurs
+    return values, heure, indicateurs

@@ -1,26 +1,16 @@
-import openai
 from config import OPENAI_API_KEY
-
-openai.api_key = OPENAI_API_KEY
+import openai
 
 def generer_signal_ia(symbole, donnees, heure, indicateurs):
     prompt = f"""
-Analyse le marché {symbole} à {heure} avec les données suivantes :
-- Open : {indicateurs['open']}
-- High : {indicateurs['high']}
-- Low : {indicateurs['low']}
-- Close : {indicateurs['close']}
-- Volume : {indicateurs['volume']}
-
-Donne une recommandation claire :
-- Prise de position ou non
-- Direction (achat ou vente)
-- Niveau d'entrée, stop, TP1, TP2, TP3
-- Contexte de la décision
+Analyse les données suivantes pour {symbole} à {heure}.
+Cours : {donnees}
+Indicateurs : {indicateurs}
+Donne un signal de trading avec justification (achat, vente ou neutre).
 """
-
-    completion = openai.ChatCompletion.create(
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
-    return completion.choices[0].message["content"].strip()
+    return response.choices[0].message.content.strip()
