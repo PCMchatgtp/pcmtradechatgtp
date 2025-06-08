@@ -1,12 +1,10 @@
-import requests
+from telegram import Bot
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 
+bot = Bot(token=TELEGRAM_TOKEN)
+
 def envoyer_message(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message
-    }
-    response = requests.post(url, data=payload)
-    if not response.ok:
-        raise Exception("❌ Échec de l'envoi Telegram : " + response.text)
+    try:
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+    except Exception as e:
+        print(f"Erreur Telegram : {e}")
