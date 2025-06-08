@@ -5,34 +5,25 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generer_signal_ia(symbole, heure, indicateurs):
     try:
-        prompt = f"""
-Tu es un expert en trading algorithmique. Voici les indicateurs techniques pour {symbole} à {heure} :
+        prompt = (
+            f"Tu es un expert en trading algorithmique. Ton rôle est de générer un plan de trading clair et structuré.\n"
+            f"Analyse les données suivantes pour {symbole} à {heure} :\n\n"
+            f"{indicateurs}\n\n"
+            f"Détermine :\n"
+            f"1. La direction du trade : Long ou Short\n"
+            f"2. Un niveau d'entrée (Entry)\n"
+            f"3. Un stop loss\n"
+            f"4. Trois take profits (TP1, TP2, TP3)\n"
+            f"5. Le ratio minimum Risk/Reward sur TP1 doit être ≥ 1:1\n"
+            f"6. Estime un taux de réussite entre 0% et 100%\n"
+            f"7. Ne retourne un plan de trading que si le taux de réussite estimé est ≥ 70%\n\n"
+            f"Réponds uniquement avec le plan de trading dans un format clair."
+        )
 
-- Open : {indicateurs.get('open', 'N/A')}
-- High : {indicateurs.get('high', 'N/A')}
-- Low : {indicateurs.get('low', 'N/A')}
-- Close : {indicateurs.get('close', 'N/A')}
-- Volume : {indicateurs.get('volume', 'N/A')}
-- Datetime : {indicateurs.get('datetime', 'N/A')}
-- Average Price : {indicateurs.get('average_price', 'N/A')}
-- Range (High - Low) : {indicateurs.get('range', 'N/A')}
-- Body Size (|Close - Open|) : {indicateurs.get('body_size', 'N/A')}
-- Upper Wick : {indicateurs.get('upper_wick', 'N/A')}
-- Lower Wick : {indicateurs.get('lower_wick', 'N/A')}
-- Pourcentage de variation : {indicateurs.get('percentage_change', 'N/A')}%
-- Bougie haussière : {indicateurs.get('bullish', 'N/A')}
-
-Analyse la situation et indique :
-1. S'il existe une opportunité de trade (achat ou vente),
-2. Pourquoi (justifie avec les indicateurs),
-3. Sinon, pourquoi s’abstenir.
-
-Ne commente pas les données absentes. Sois clair, synthétique et orienté décision.
-"""
         reponse = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Tu es un expert en trading."},
+                {"role": "system", "content": "Tu es un assistant expert en trading professionnel."},
                 {"role": "user", "content": prompt}
             ]
         )
