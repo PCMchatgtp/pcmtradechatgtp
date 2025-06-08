@@ -16,8 +16,13 @@ async def analyser_opportunites():
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
             analyse = generer_signal_ia(symbole, heure, indicateurs)
-            if analyse:  # Seulement si GPT détecte une opportunité
-                await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
+
+            # Vérifie que GPT retourne un taux de réussite ≥ 70%
+            if analyse and "taux de réussite" in analyse.lower() and "%" in analyse:
+                import re
+                taux = re.search(r"(\d{1,3})\s*%", analyse)
+                if taux and int(taux.group(1)) >= 70:
+                    await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
         except Exception as e:
             print(f"❌ Erreur sur {symbole} : {e}")
 
