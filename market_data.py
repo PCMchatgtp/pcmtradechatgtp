@@ -1,15 +1,42 @@
 import requests
+from datetime import datetime
+import pytz
+from config import TWELVE_DATA_API_KEY
 
 def recuperer_donnees(symbole):
-    url = f"https://api.twelvedata.com/time_series?symbol={symbole}&interval=5min&outputsize=20&apikey={API_KEY}"
-    reponse = requests.get(url)
-    data = reponse.json()
+    symbol_mapping = {
+        "XAU/USD": "XAU/USD",
+        "BTC/USD": "BTC/USD",
+        "QQQ": "QQQ"
+    }
+
+    if symbole not in symbol_mapping:
+        raise ValueError(f"❌ Symbole non pris en charge : {symbole}")
+
+    url = f"https://api.twelvedata.com/time_series?symbol={symbol_mapping[symbole]}&interval=5min&apikey={TWELVE_DATA_API_KEY}&outputsize=50&dp=4"
+    response = requests.get(url)
+    data = response.json()
+
     if "values" not in data:
         raise ValueError(f"❌ Erreur lors de l'extraction des cours : {data}")
+
     valeurs = data["values"]
-    heure = valeurs[0]["datetime"]
+
+    donnees = []
+    for valeur in valeurs:
+        donnees.append({
+            "datetime": valeur["datetime"],
+            "open": float(valeur["open"]),
+            "high": float(valeur["high"]),
+            "low": float(valeur["low"]),
+            "close": float(valeur["close"]),
+            "volume": float(valeur["volume"])
+        })
+
+    heure_analyse = datetime.now(pytz.timezone("Europe/Paris")).strftime("%H:%M")
     indicateurs = {
-        "volume": float(valeurs[0]["volume"]),
-        "close": float(valeurs[0]["close"]),
+        "derniere_close": donnees[0]["close"],
+        "volume": donnees[0]["volume"]
     }
-    return valeurs, heure, indicateurs
+
+    return donnees, heure_analyse, indicateurs
