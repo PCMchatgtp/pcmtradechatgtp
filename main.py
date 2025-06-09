@@ -53,5 +53,6 @@ if __name__ == "__main__":
     print("✅ Bot lancé. Attente des prochaines exécutions...", flush=True)
     run_async(analyser_opportunites)  # 🔁 Lancement immédiat
     while True:
+        print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(60)
