@@ -61,11 +61,14 @@ async def analyser_globale():
 # Wrapper sécurisé
 def run_async(coroutine_func):
     loop = asyncio.get_event_loop()
+    coroutine = coroutine_func()  # ✅ Appel de la fonction pour créer la coroutine
+
     async def safe_wrapper():
         try:
-            await coroutine_func()
+            await coroutine
         except Exception as e:
             print(f"❌ Erreur dans {coroutine_func.__name__} : {e}", flush=True)
+
     if loop.is_running():
         asyncio.ensure_future(safe_wrapper())
     else:
