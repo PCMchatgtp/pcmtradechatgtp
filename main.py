@@ -17,7 +17,11 @@ async def analyser_opportunites():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            analyse = generer_signal_ia(symbole, heure, indicateurs)
+
+            # Timeout pour bloquer max 20s si GPT plante
+            analyse = await asyncio.wait_for(
+                generer_signal_ia(symbole, heure, indicateurs), timeout=20
+            )
 
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
@@ -26,7 +30,13 @@ async def analyser_opportunites():
             if "taux de réussite" in analyse.lower() and "%" in analyse:
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
-                    await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
+                    # Timeout aussi pour Telegram
+                    await asyncio.wait_for(
+                        envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}"), timeout=10
+                    )
+
+        except asyncio.TimeoutError:
+            print(f"⏱️ Timeout sur {symbole} – GPT ou Telegram trop lent", flush=True)
         except Exception as e:
             print(f"❌ Erreur sur {symbole} : {e}", flush=True)
 
@@ -38,13 +48,17 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            generer_signal_ia(symbole, heure, indicateurs)
+            await asyncio.wait_for(
+                generer_signal_ia(symbole, heure, indicateurs), timeout=20
+            )
             resume_global += f"✅ {symbole}\n"
+        except asyncio.TimeoutError:
+            resume_global += f"❌ {symbole} : Timeout GPT\n"
         except Exception as e:
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
 
-# Wrapper sécurisé compatible avec boucle déjà en cours
+# Wrapper sécurisé
 def run_async(coroutine_func):
     loop = asyncio.get_event_loop()
     async def safe_wrapper():
@@ -67,7 +81,7 @@ async def boucle_schedule():
 # Lancement principal
 async def main():
     print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
-    run_async(analyser_opportunites)  # Démarrage immédiat
+    run_async(analyser_opportunites)
     schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
     schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
     await boucle_schedule()
