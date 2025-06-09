@@ -44,23 +44,29 @@ async def analyser_globale():
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
 
-# Fonction pour exécuter une coroutine depuis une fonction synchrone
-def run_async(coro):
-    asyncio.run(coro())
+# Wrapper sécurisé pour planification
+def run_async(coroutine_func):
+    async def safe_wrapper():
+        try:
+            await coroutine_func()
+        except Exception as e:
+            print(f"❌ Erreur dans {coroutine_func.__name__} : {e}", flush=True)
+    asyncio.create_task(safe_wrapper())
 
-# Lancement du bot
-if __name__ == "__main__":
-    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
-
-    # Lancement initial
-    run_async(analyser_opportunites)
-
-    # Planification
-    schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
-    schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
-
-    # Boucle principale
+# Boucle continue
+async def boucle_schedule():
     while True:
         schedule.run_pending()
         print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
-        time.sleep(60)
+        await asyncio.sleep(1)
+
+# Lancement principal
+async def main():
+    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
+    run_async(analyser_opportunites)  # Démarrage immédiat
+    schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
+    schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
+    await boucle_schedule()
+
+if __name__ == "__main__":
+    asyncio.run(main())
