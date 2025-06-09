@@ -44,14 +44,18 @@ async def analyser_globale():
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
 
-# Wrapper sécurisé pour planification
+# Wrapper sécurisé compatible avec boucle déjà en cours
 def run_async(coroutine_func):
+    loop = asyncio.get_event_loop()
     async def safe_wrapper():
         try:
             await coroutine_func()
         except Exception as e:
             print(f"❌ Erreur dans {coroutine_func.__name__} : {e}", flush=True)
-    asyncio.create_task(safe_wrapper())
+    if loop.is_running():
+        asyncio.ensure_future(safe_wrapper())
+    else:
+        loop.run_until_complete(safe_wrapper())
 
 # Boucle continue
 async def boucle_schedule():
