@@ -14,21 +14,23 @@ def generer_signal_ia(symbole, heure, indicateurs):
         heure_locale = now.strftime("%H:%M")
 
         prompt = (
-    f"Tu es un expert en trading algorithmique. Tu dois ABSOLUMENT filtrer les opportunités :\n"
-    f"NE FOURNIS AUCUN PLAN si les indicateurs ne sont pas parfaitement alignés.\n"
-    f"Tu dois être extrêmement exigeant et prudent.\n"
-    f"Voici les données pour {symbole} à {heure} :\n\n"
-    f"{indicateurs}\n\n"
-    f"Si les conditions ne sont pas claires (ex : pas de cassure, pas de structure propre, volume faible), réponds uniquement : 'Aucune opportunité claire détectée.'\n"
-    f"Sinon, si tout est parfaitement aligné, donne :\n"
-    f"1. Direction (Long ou Short)\n"
-    f"2. Entrée\n"
-    f"3. Stop\n"
-    f"4. TP1, TP2, TP3\n"
-    f"5. Risk/Reward sur TP1 (obligatoire ≥ 1:1)\n"
-    f"6. Taux de réussite estimé entre 0 % et 100 %\n"
-    f"Uniquement si le taux est ≥ 70 %, le plan est accepté.\n"
-)
+            f"Tu es un expert en trading algorithmique.\n"
+            f"Voici les données pour l’actif {symbole}, le {jour} à {heure_locale} (heure locale), "
+            f"avec les données collectées à {heure} :\n\n"
+            f"{indicateurs}\n\n"
+            f"Tu dois ABSOLUMENT filtrer les opportunités.\n"
+            f"NE FOURNIS AUCUN PLAN si les indicateurs ne sont pas parfaitement alignés "
+            f"(ex : pas de cassure, structure peu claire, volume faible).\n\n"
+            f"Si les conditions ne sont pas claires, réponds UNIQUEMENT : 'Aucune opportunité claire détectée.'\n\n"
+            f"Sinon, si tout est parfaitement aligné, donne :\n"
+            f"1. Direction (Long ou Short)\n"
+            f"2. Niveau d’entrée\n"
+            f"3. Niveau de stop\n"
+            f"4. TP1, TP2, TP3\n"
+            f"5. Risk/Reward sur TP1 (minimum 1:1 requis)\n"
+            f"6. Taux de réussite estimé (entre 0 % et 100 %)\n\n"
+            f"N'affiche le plan que si le taux est ≥ 70 %.\n"
+        )
 
         reponse = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -37,6 +39,11 @@ def generer_signal_ia(symbole, heure, indicateurs):
                 {"role": "user", "content": prompt}
             ]
         )
-        return reponse.choices[0].message.content
+
+        if hasattr(reponse, "choices") and len(reponse.choices) > 0:
+            return reponse.choices[0].message.content
+        else:
+            return f"❌ Erreur : réponse vide ou inattendue de GPT pour {symbole}"
+
     except Exception as e:
         return f"❌ Erreur GPT pour {symbole} : {e}"
