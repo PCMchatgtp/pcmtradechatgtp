@@ -6,6 +6,7 @@ import asyncio
 import os
 import schedule
 import time
+import re
 
 API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
@@ -18,9 +19,7 @@ async def analyser_opportunites():
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
             analyse = generer_signal_ia(symbole, heure, indicateurs)
 
-            # Vérifie que GPT retourne un taux de réussite ≥ 60%
             if analyse and "taux de réussite" in analyse.lower() and "%" in analyse:
-                import re
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
                     await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
@@ -35,7 +34,7 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            analyse = generer_signal_ia(symbole, heure, indicateurs)
+            generer_signal_ia(symbole, heure, indicateurs)  # Analyse sans message, juste pour test cohérence
             resume_global += f"✅ {symbole}\n"
         except Exception as e:
             resume_global += f"❌ {symbole} : {e}\n"
@@ -44,15 +43,21 @@ async def analyser_globale():
 # Planification
 def run_async(func):
     print(f"[{time.strftime('%H:%M:%S')}] 🔁 Exécution planifiée : {func.__name__}", flush=True)
-    asyncio.run(func())
+    asyncio.create_task(func())
 
-schedule.every(5).minutes.do(run_async, analyser_opportunites)
-schedule.every().hour.at(":00").do(run_async, analyser_globale)
+async def boucle_schedule():
+    while True:
+        schedule.run_pending()
+        print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
+        await asyncio.sleep(1)
+
+# Lancement du bot
+async def main():
+    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
+    run_async(analyser_opportunites)  # Lancement immédiat
+    schedule.every(5).minutes.do(run_async, analyser_opportunites)
+    schedule.every().hour.at(":00").do(run_async, analyser_globale)
+    await boucle_schedule()
 
 if __name__ == "__main__":
-    print("✅ Bot lancé. Attente des prochaines exécutions...", flush=True)
-    run_async(analyser_opportunites)  # 🔁 Lancement immédiat
-    while True:
-        print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
-        schedule.run_pending()
-        time.sleep(60)
+    asyncio.run(main())
