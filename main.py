@@ -11,6 +11,7 @@ API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 # Analyse toutes les 5 min pour les opportunités
 async def analyser_opportunites():
+    print(f"[{time.strftime('%H:%M:%S')}] 🔄 Analyse des opportunités lancée")
     symboles = SYMBOLS.split(",")
     for symbole in symboles:
         try:
