@@ -42,6 +42,7 @@ async def analyser_globale():
 
 # Planification
 def run_async(func):
+    print(f"[{time.strftime('%H:%M:%S')}] 🔁 Exécution planifiée : {func.__name__}")
     asyncio.run(func())
 
 schedule.every(5).minutes.do(run_async, analyser_opportunites)
