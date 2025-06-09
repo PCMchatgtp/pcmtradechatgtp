@@ -18,10 +18,8 @@ async def analyser_opportunites():
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
 
-            # Timeout pour bloquer max 20s si GPT plante
-            analyse = await asyncio.wait_for(
-                generer_signal_ia(symbole, heure, indicateurs), timeout=20
-            )
+            # ⚠️ Pas d'await ici car la fonction est synchrone
+            analyse = generer_signal_ia(symbole, heure, indicateurs)
 
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
@@ -30,13 +28,12 @@ async def analyser_opportunites():
             if "taux de réussite" in analyse.lower() and "%" in analyse:
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
-                    # Timeout aussi pour Telegram
                     await asyncio.wait_for(
                         envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}"), timeout=10
                     )
 
         except asyncio.TimeoutError:
-            print(f"⏱️ Timeout sur {symbole} – GPT ou Telegram trop lent", flush=True)
+            print(f"⏱️ Timeout sur {symbole} – Telegram trop lent", flush=True)
         except Exception as e:
             print(f"❌ Erreur sur {symbole} : {e}", flush=True)
 
@@ -48,12 +45,10 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            await asyncio.wait_for(
-                generer_signal_ia(symbole, heure, indicateurs), timeout=20
-            )
+            
+            # ⚠️ Même chose ici
+            generer_signal_ia(symbole, heure, indicateurs)
             resume_global += f"✅ {symbole}\n"
-        except asyncio.TimeoutError:
-            resume_global += f"❌ {symbole} : Timeout GPT\n"
         except Exception as e:
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
@@ -61,8 +56,7 @@ async def analyser_globale():
 # Wrapper sécurisé
 def run_async(coroutine_func):
     loop = asyncio.get_event_loop()
-    coroutine = coroutine_func()  # ✅ Appel de la fonction pour créer la coroutine
-
+    coroutine = coroutine_func()
     async def safe_wrapper():
         try:
             await coroutine
