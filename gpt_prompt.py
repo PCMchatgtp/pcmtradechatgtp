@@ -25,7 +25,7 @@ def generer_signal_ia(symbole, heure, indicateurs):
             f"4. Trois take profits (TP1, TP2, TP3)\n"
             f"5. Le ratio minimum Risk/Reward sur TP1 doit être ≥ 1:1\n"
             f"6. Estime un taux de réussite entre 0% et 100%\n"
-            f"7. Ne retourne un plan de trading que si le taux de réussite estimé est ≥ 70%\n\n"
+            f"7. Ne retourne un plan de trading que si le taux de réussite estimé est ≥ 60%\n\n"
             f"Réponds uniquement avec le plan de trading dans un format clair."
         )
 
