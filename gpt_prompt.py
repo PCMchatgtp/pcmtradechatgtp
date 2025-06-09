@@ -14,20 +14,21 @@ def generer_signal_ia(symbole, heure, indicateurs):
         heure_locale = now.strftime("%H:%M")
 
         prompt = (
-            f"Tu es un expert en trading algorithmique. Nous sommes {jour} et il est {heure_locale} à Paris.\n"
-            f"Ton rôle est de générer un plan de trading clair et structuré.\n"
-            f"Analyse les données suivantes pour {symbole} à {heure} :\n\n"
-            f"{indicateurs}\n\n"
-            f"Détermine :\n"
-            f"1. La direction du trade : Long ou Short\n"
-            f"2. Un niveau d'entrée (Entry)\n"
-            f"3. Un stop loss\n"
-            f"4. Trois take profits (TP1, TP2, TP3)\n"
-            f"5. Le ratio minimum Risk/Reward sur TP1 doit être ≥ 1:1\n"
-            f"6. Estime un taux de réussite entre 0% et 100%\n"
-            f"7. Ne retourne un plan de trading que si le taux de réussite estimé est ≥ 60%\n\n"
-            f"Réponds uniquement avec le plan de trading dans un format clair avec explication des éléments qui te font prendre position"
-        )
+    f"Tu es un expert en trading algorithmique. Tu dois ABSOLUMENT filtrer les opportunités :\n"
+    f"NE FOURNIS AUCUN PLAN si les indicateurs ne sont pas parfaitement alignés.\n"
+    f"Tu dois être extrêmement exigeant et prudent.\n"
+    f"Voici les données pour {symbole} à {heure} :\n\n"
+    f"{indicateurs}\n\n"
+    f"Si les conditions ne sont pas claires (ex : pas de cassure, pas de structure propre, volume faible), réponds uniquement : 'Aucune opportunité claire détectée.'\n"
+    f"Sinon, si tout est parfaitement aligné, donne :\n"
+    f"1. Direction (Long ou Short)\n"
+    f"2. Entrée\n"
+    f"3. Stop\n"
+    f"4. TP1, TP2, TP3\n"
+    f"5. Risk/Reward sur TP1 (obligatoire ≥ 1:1)\n"
+    f"6. Taux de réussite estimé entre 0 % et 100 %\n"
+    f"Uniquement si le taux est ≥ 70 %, le plan est accepté.\n"
+)
 
         reponse = client.chat.completions.create(
             model="gpt-3.5-turbo",
