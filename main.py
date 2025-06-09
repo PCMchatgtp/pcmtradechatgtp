@@ -18,7 +18,7 @@ async def analyser_opportunites():
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
             analyse = generer_signal_ia(symbole, heure, indicateurs)
 
-            # Vérifie que GPT retourne un taux de réussite ≥ 70%
+            # Vérifie que GPT retourne un taux de réussite ≥ 60%
             if analyse and "taux de réussite" in analyse.lower() and "%" in analyse:
                 import re
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
@@ -49,6 +49,7 @@ schedule.every().hour.at(":00").do(run_async, analyser_globale)
 
 if __name__ == "__main__":
     print("✅ Bot lancé. Attente des prochaines exécutions...")
+    run_async(analyser_opportunites)  # 🔁 Lancement immédiat
     while True:
         schedule.run_pending()
         time.sleep(1)
