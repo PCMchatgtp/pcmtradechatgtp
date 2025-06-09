@@ -19,7 +19,11 @@ async def analyser_opportunites():
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
             analyse = generer_signal_ia(symbole, heure, indicateurs)
 
-            if analyse and "taux de réussite" in analyse.lower() and "%" in analyse:
+            if not analyse or "aucune opportunité" in analyse.lower():
+                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
+                continue
+
+            if "taux de réussite" in analyse.lower() and "%" in analyse:
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
                     await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
@@ -34,7 +38,7 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            generer_signal_ia(symbole, heure, indicateurs)  # Analyse sans message, juste pour test cohérence
+            generer_signal_ia(symbole, heure, indicateurs)
             resume_global += f"✅ {symbole}\n"
         except Exception as e:
             resume_global += f"❌ {symbole} : {e}\n"
