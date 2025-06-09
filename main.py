@@ -11,7 +11,7 @@ API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 # Analyse toutes les 5 min pour les opportunités
 async def analyser_opportunites():
-    print(f"[{time.strftime('%H:%M:%S')}] 🔄 Analyse des opportunités lancée")
+    print(f"[{time.strftime('%H:%M:%S')}] 🔄 Analyse des opportunités lancée", flush=True)
     symboles = SYMBOLS.split(",")
     for symbole in symboles:
         try:
@@ -25,10 +25,11 @@ async def analyser_opportunites():
                 if taux and int(taux.group(1)) >= 60:
                     await envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}")
         except Exception as e:
-            print(f"❌ Erreur sur {symbole} : {e}")
+            print(f"❌ Erreur sur {symbole} : {e}", flush=True)
 
 # Analyse globale toutes les heures
 async def analyser_globale():
+    print(f"[{time.strftime('%H:%M:%S')}] 🧠 Analyse globale lancée", flush=True)
     symboles = SYMBOLS.split(",")
     resume_global = f"📊 Analyse globale {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
     for symbole in symboles:
@@ -42,14 +43,14 @@ async def analyser_globale():
 
 # Planification
 def run_async(func):
-    print(f"[{time.strftime('%H:%M:%S')}] 🔁 Exécution planifiée : {func.__name__}")
+    print(f"[{time.strftime('%H:%M:%S')}] 🔁 Exécution planifiée : {func.__name__}", flush=True)
     asyncio.run(func())
 
 schedule.every(5).minutes.do(run_async, analyser_opportunites)
 schedule.every().hour.at(":00").do(run_async, analyser_globale)
 
 if __name__ == "__main__":
-    print("✅ Bot lancé. Attente des prochaines exécutions...")
+    print("✅ Bot lancé. Attente des prochaines exécutions...", flush=True)
     run_async(analyser_opportunites)  # 🔁 Lancement immédiat
     while True:
         schedule.run_pending()
