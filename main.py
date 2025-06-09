@@ -44,24 +44,23 @@ async def analyser_globale():
             resume_global += f"❌ {symbole} : {e}\n"
     await envoyer_message(resume_global)
 
-# Planification
-def run_async(func):
-    print(f"[{time.strftime('%H:%M:%S')}] 🔁 Exécution planifiée : {func.__name__}", flush=True)
-    asyncio.create_task(func())
+# Fonction pour exécuter une coroutine depuis une fonction synchrone
+def run_async(coro):
+    asyncio.run(coro())
 
-async def boucle_schedule():
+# Lancement du bot
+if __name__ == "__main__":
+    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
+
+    # Lancement initial
+    run_async(analyser_opportunites)
+
+    # Planification
+    schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
+    schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
+
+    # Boucle principale
     while True:
         schedule.run_pending()
         print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
-        await asyncio.sleep(1)
-
-# Lancement du bot
-async def main():
-    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
-    run_async(analyser_opportunites)  # Lancement immédiat
-    schedule.every(5).minutes.do(run_async, analyser_opportunites)
-    schedule.every().hour.at(":00").do(run_async, analyser_globale)
-    await boucle_schedule()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        time.sleep(60)
