@@ -29,7 +29,7 @@ def generer_signal_ia(symbole, heure, indicateurs):
             f"4. TP1, TP2, TP3\n"
             f"5. Risk/Reward sur TP1 (minimum 1:1 requis)\n"
             f"6. Taux de réussite estimé (entre 0 % et 100 %)\n\n"
-            f"N'affiche le plan que si le taux est ≥ 70 %.\n"
+            f"N'affiche le plan que si le taux est ≥ 60 %.\n"
         )
 
         reponse = client.chat.completions.create(
