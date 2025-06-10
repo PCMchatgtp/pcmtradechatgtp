@@ -29,7 +29,9 @@ def generer_signal_ia(symbole, heure, indicateurs):
             f"4. TP1, TP2, TP3\n"
             f"5. Risk/Reward sur TP1 (minimum 1:1 requis)\n"
             f"6. Taux de réussite estimé (entre 0 % et 100 %)\n\n"
-            f"N'affiche le plan que si le taux est ≥ 60 %.\n"
+            f"N'affiche le plan que si le taux est ≥ 60 % ET que le stop est suffisant.\n"
+            f"Pour XAU/USD, le stop doit être d'au moins 1.4 points d'écart avec l'entrée.\n"
+            f"Pour BTC/USD, le stop doit être d'au moins 20 points d'écart avec l'entrée.\n"
         )
 
         reponse = client.chat.completions.create(
@@ -48,8 +50,6 @@ def generer_signal_ia(symbole, heure, indicateurs):
     except Exception as e:
         return f"❌ Erreur GPT pour {symbole} : {e}"
 
-
-# 🔍 Fonction spéciale pour la stratégie OPR
 def generer_signal_opr(symbole, heure, indicateurs, high_range, low_range):
     try:
         paris_tz = pytz.timezone("Europe/Paris")
