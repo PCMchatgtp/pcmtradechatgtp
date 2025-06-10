@@ -31,6 +31,18 @@ async def analyser_opportunites():
             if "taux de réussite" in analyse.lower() and "%" in analyse:
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
+                    # 🔍 Vérifie SL minimum : 1.4 pour Gold, 20 pour BTC
+                    entry_match = re.search(r"entrée\s*[:\-]?\s*([\d\.]+)", analyse.lower())
+                    stop_match = re.search(r"stop\s*[:\-]?\s*([\d\.]+)", analyse.lower())
+                    if entry_match and stop_match:
+                        entry = float(entry_match.group(1))
+                        stop = float(stop_match.group(1))
+                        ecart = abs(entry - stop)
+                        min_distance = 1.4 if symbole == "XAU/USD" else 20
+                        if ecart < min_distance:
+                            print(f"❌ Distance SL ({ecart}) trop faible pour {symbole}, plan rejeté", flush=True)
+                            continue
+
                     print(f"✅ Envoi du signal Telegram pour {symbole}", flush=True)
                     await asyncio.wait_for(
                         envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}"), timeout=10
