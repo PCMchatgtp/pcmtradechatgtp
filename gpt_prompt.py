@@ -17,11 +17,10 @@ def generer_signal_ia(symbole, heure, indicateurs):
             f"Voici les données pour l’actif {symbole}, le {jour} à {heure_locale} (heure locale), "
             f"avec les données collectées à {heure} :\n\n"
             f"{indicateurs}\n\n"
-            f"Tu dois privilégier la qualité, mais accepter les opportunités raisonnablement claires.\n"
-            f"Ne propose un plan que si les indicateurs sont suffisamment alignés "
-            f"(structure + cassure ou support + flux propre).\n"
-            f"NE FOURNIS AUCUN PLAN si les indicateurs sont brouillons ou peu clairs.\n\n"
-            f"Si les conditions ne sont pas claires, réponds UNIQUEMENT : 'Aucune opportunité claire détectée.'\n\n"
+            f"Tu dois privilégier la qualité, mais tu peux proposer un plan si plusieurs éléments convergents sont identifiables "
+            f(même si tout n’est pas parfaitement aligné).\n"
+            f"Ne propose un plan que si on observe un minimum de cohérence entre la structure, les niveaux clés et la dynamique du marché.\n"
+            f"Si aucune lecture exploitable n’est possible, réponds UNIQUEMENT : 'Aucune opportunité claire détectée.'\n\n"
             f"Sinon, donne :\n"
             f"1. Direction (Long ou Short)\n"
             f"2. Niveau d’entrée\n"
@@ -29,7 +28,7 @@ def generer_signal_ia(symbole, heure, indicateurs):
             f"4. TP1, TP2, TP3\n"
             f"5. Risk/Reward sur TP1 (minimum 1:1 requis)\n"
             f"6. Taux de réussite estimé (entre 0 % et 100 %)\n\n"
-            f"N'affiche le plan que si le taux est ≥ 60 %.\n"
+            f"N'affiche le plan que si le taux est ≥ 50 %.\n"
         )
 
         reponse = client.chat.completions.create(
@@ -73,7 +72,7 @@ def generer_signal_opr(symbole, heure, indicateurs, high_range, low_range):
             f"4. TP1, TP2, TP3\n"
             f"5. Risk/Reward sur TP1 (≥ 1:1)\n"
             f"6. Taux de réussite estimé\n"
-            f"Uniquement si le taux est ≥ 60 %, le plan est accepté."
+            f"Uniquement si le taux est ≥ 50 %, le plan est accepté."
         )
 
         reponse = client.chat.completions.create(
