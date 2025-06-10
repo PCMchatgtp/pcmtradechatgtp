@@ -66,4 +66,71 @@ async def analyser_opr():
                 except Exception as e:
                     print(f"❌ Erreur OPR {symbole} : {e}", flush=True)
 
-# 🕔 Capture du range OPR à
+# 🕔 Capture du range OPR à 15h45
+async def memoriser_range_opr():
+    print(f"[{time.strftime('%H:%M:%S')}] 📊 Enregistrement du range OPR", flush=True)
+    for symbole in ["BTC/USD", "XAU/USD"]:
+        try:
+            heure, indicateurs = recuperer_donnees(symbole, API_KEY)
+            high = None
+            low = None
+            match_high = re.search(r"High[^0-9]*([\d\.]+)", indicateurs)
+            match_low = re.search(r"Low[^0-9]*([\d\.]+)", indicateurs)
+            if match_high:
+                high = float(match_high.group(1))
+            if match_low:
+                low = float(match_low.group(1))
+            if high and low:
+                opr_range[symbole] = (high, low)
+                print(f"✅ Range OPR mémorisé pour {symbole} : High={high} / Low={low}", flush=True)
+        except Exception as e:
+            print(f"❌ Erreur lors de l’enregistrement du range OPR pour {symbole} : {e}", flush=True)
+
+# 📊 Analyse globale toutes les heures
+async def analyser_globale():
+    print(f"[{time.strftime('%H:%M:%S')}] 🧠 Analyse globale lancée", flush=True)
+    symboles = SYMBOLS.split(",")
+    resume_global = f"📊 Analyse globale {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    for symbole in symboles:
+        try:
+            heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
+            generer_signal_ia(symbole, heure, indicateurs)
+            resume_global += f"✅ {symbole}\n"
+        except Exception as e:
+            resume_global += f"❌ {symbole} : {e}\n"
+    await envoyer_message(resume_global)
+
+# 🔐 Exécution sécurisée
+def run_async(coroutine_func):
+    loop = asyncio.get_event_loop()
+    coroutine = coroutine_func()
+    async def safe_wrapper():
+        try:
+            await coroutine
+        except Exception as e:
+            print(f"❌ Erreur dans {coroutine_func.__name__} : {e}", flush=True)
+
+    if loop.is_running():
+        asyncio.ensure_future(safe_wrapper())
+    else:
+        loop.run_until_complete(safe_wrapper())
+
+# 🔄 Boucle continue
+async def boucle_schedule():
+    while True:
+        schedule.run_pending()
+        print(f"🕒 {time.strftime('%H:%M:%S')} - En attente de la prochaine exécution...", flush=True)
+        await asyncio.sleep(1)
+
+# ▶️ Lancement principal
+async def main():
+    print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
+    run_async(analyser_opportunites)
+    schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
+    schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
+    schedule.every().day.at("15:45").do(lambda: run_async(memoriser_range_opr))
+    schedule.every(1).minutes.do(lambda: run_async(analyser_opr))
+    await boucle_schedule()
+
+if __name__ == "__main__":
+    asyncio.run(main())
