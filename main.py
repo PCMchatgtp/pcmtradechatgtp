@@ -7,8 +7,12 @@ import os
 import schedule
 import time
 import re
+from datetime import datetime, timedelta
+import pytz
 
 API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+opr_fenetre_active = False
+opr_debut = None
 
 # Analyse toutes les 5 min pour les opportunités
 async def analyser_opportunites():
@@ -17,8 +21,6 @@ async def analyser_opportunites():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-
-            # ⚠️ Pas d'await ici car la fonction est synchrone
             analyse = generer_signal_ia(symbole, heure, indicateurs)
 
             if not analyse or "aucune opportunité" in analyse.lower():
@@ -37,6 +39,35 @@ async def analyser_opportunites():
         except Exception as e:
             print(f"❌ Erreur sur {symbole} : {e}", flush=True)
 
+# Analyse OPR spécifique Gold/BTC après 15h45 jusqu’à 16h15
+async def analyser_opr():
+    global opr_fenetre_active, opr_debut
+    paris_tz = pytz.timezone("Europe/Paris")
+    now = datetime.now(paris_tz)
+
+    if not opr_fenetre_active:
+        opr_fenetre_active = True
+        opr_debut = now
+        print(f"[{now.strftime('%H:%M:%S')}] 🚀 Fenêtre OPR démarrée")
+
+    elif (now - opr_debut) > timedelta(minutes=30):
+        opr_fenetre_active = False
+        print(f"[{now.strftime('%H:%M:%S')}] ❌ Fin de la fenêtre OPR")
+        return
+
+    for symbole in ["XAU/USD", "BTC/USD"]:
+        try:
+            heure, indicateurs = recuperer_donnees(symbole, API_KEY)
+            analyse = generer_signal_ia(symbole, heure, indicateurs)
+
+            if analyse and "taux de réussite" in analyse.lower() and "%" in analyse:
+                taux = re.search(r"(\d{1,3})\s*%", analyse)
+                if taux and int(taux.group(1)) >= 60:
+                    await envoyer_message(f"📈 Signal OPR détecté sur {symbole} ({heure})\n{analyse}")
+                    opr_fenetre_active = False  # On stoppe après le premier trade détecté
+        except Exception as e:
+            print(f"❌ Erreur OPR sur {symbole} : {e}", flush=True)
+
 # Analyse globale toutes les heures
 async def analyser_globale():
     print(f"[{time.strftime('%H:%M:%S')}] 🧠 Analyse globale lancée", flush=True)
@@ -45,8 +76,6 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            
-            # ⚠️ Même chose ici
             generer_signal_ia(symbole, heure, indicateurs)
             resume_global += f"✅ {symbole}\n"
         except Exception as e:
@@ -81,6 +110,8 @@ async def main():
     run_async(analyser_opportunites)
     schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
     schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
+    schedule.every().day.at("15:45").do(lambda: run_async(analyser_opr))
+    schedule.every(5).minutes.do(lambda: run_async(analyser_opr))
     await boucle_schedule()
 
 if __name__ == "__main__":
