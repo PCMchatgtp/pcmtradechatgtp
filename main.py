@@ -106,8 +106,20 @@ async def analyser_globale():
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            tendance = "📈 haussière" if "hauss" in indicateurs.lower() else "📉 baissière" if "baiss" in indicateurs.lower() else "🔁 neutre"
-            rsi = re.search(r"RSI\s*[:\-]?\s*([\d\.]+)", indicateurs)
+
+            # 🔄 Conversion indicateurs en texte si dict
+            if isinstance(indicateurs, dict):
+                indicateurs_text = "\n".join([f"{k}: {v}" for k, v in indicateurs.items()])
+            else:
+                indicateurs_text = str(indicateurs)
+
+            tendance = (
+                "📈 haussière" if "hauss" in indicateurs_text.lower()
+                else "📉 baissière" if "baiss" in indicateurs_text.lower()
+                else "🔁 neutre"
+            )
+
+            rsi = re.search(r"RSI\s*[:\-]?\s*([\d\.]+)", indicateurs_text)
             rsi_val = float(rsi.group(1)) if rsi else None
             if rsi_val:
                 if rsi_val > 70:
@@ -119,10 +131,10 @@ async def analyser_globale():
             else:
                 rsi_com = "RSI inconnu"
 
-            resume_global += f"🔹 {symbole} : {tendance} | RSI : {rsi_val or 'N/A'} → {rsi_com}\n"
+            resume_global += f"🔹 {symbole.strip()} : {tendance} | RSI : {rsi_val or 'N/A'} → {rsi_com}\n"
 
         except Exception as e:
-            resume_global += f"❌ {symbole} : erreur analyse – {e}\n"
+            resume_global += f"❌ {symbole.strip()} : erreur analyse – {e}\n"
 
     await envoyer_message(resume_global)
 
