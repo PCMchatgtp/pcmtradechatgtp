@@ -59,7 +59,6 @@ async def analyser_opportunites():
 async def analyser_opr():
     paris_tz = pytz.timezone("Europe/Paris")
     now = datetime.now(paris_tz)
-    heure_now = now.strftime("%H:%M")
     heure_int = int(now.strftime("%H%M"))
 
     if 1545 <= heure_int <= 1615:
@@ -98,18 +97,33 @@ async def memoriser_range_opr():
         except Exception as e:
             print(f"❌ Erreur lors de l’enregistrement du range OPR pour {symbole} : {e}", flush=True)
 
-# 📊 Analyse globale toutes les heures
+# 📊 Analyse globale toutes les heures avec résumé exploitable
 async def analyser_globale():
     print(f"[{time.strftime('%H:%M:%S')}] 🧠 Analyse globale lancée", flush=True)
     symboles = SYMBOLS.split(",")
-    resume_global = f"📊 Analyse globale {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    resume_global = f"📊 Analyse horaire – {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+
     for symbole in symboles:
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-            generer_signal_ia(symbole, heure, indicateurs)
-            resume_global += f"✅ {symbole}\n"
+            tendance = "📈 haussière" if "hauss" in indicateurs.lower() else "📉 baissière" if "baiss" in indicateurs.lower() else "🔁 neutre"
+            rsi = re.search(r"RSI\s*[:\-]?\s*([\d\.]+)", indicateurs)
+            rsi_val = float(rsi.group(1)) if rsi else None
+            if rsi_val:
+                if rsi_val > 70:
+                    rsi_com = "📊 Surachat"
+                elif rsi_val < 30:
+                    rsi_com = "📉 Survente"
+                else:
+                    rsi_com = "RSI neutre"
+            else:
+                rsi_com = "RSI inconnu"
+
+            resume_global += f"🔹 {symbole} : {tendance} | RSI : {rsi_val or 'N/A'} → {rsi_com}\n"
+
         except Exception as e:
-            resume_global += f"❌ {symbole} : {e}\n"
+            resume_global += f"❌ {symbole} : erreur analyse – {e}\n"
+
     await envoyer_message(resume_global)
 
 # 🔐 Exécution sécurisée
