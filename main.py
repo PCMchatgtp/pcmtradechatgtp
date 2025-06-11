@@ -22,7 +22,7 @@ async def analyser_opportunites():
         print(f"➡️ Analyse en cours sur {symbole}", flush=True)
         try:
             heure, indicateurs = recuperer_donnees(symbole, API_KEY)
-            analyse = generer_signal_ia(symbole, heure, indicateurs)
+            analyse = generer_signal_ia(symbole, heure, str(indicateurs))  # ✅ Conversion ici
 
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
@@ -68,7 +68,7 @@ async def analyser_opr():
                     print(f"🔍 Analyse OPR pour {symbole}", flush=True)
                     heure, indicateurs = recuperer_donnees(symbole, API_KEY)
                     high, low = opr_range[symbole]
-                    signal = generer_signal_opr(symbole, heure, indicateurs, high, low)
+                    signal = generer_signal_opr(symbole, heure, str(indicateurs), high, low)  # ✅ conversion aussi
 
                     if signal and "aucune" not in signal.lower() and "pas de cassure" not in signal.lower():
                         await envoyer_message(f"📈 Signal OPR {symbole} ({heure})\n{signal}")
@@ -85,8 +85,8 @@ async def memoriser_range_opr():
             heure, indicateurs = recuperer_donnees(symbole, API_KEY)
             high = None
             low = None
-            match_high = re.search(r"High[^0-9]*([\d\.]+)", indicateurs)
-            match_low = re.search(r"Low[^0-9]*([\d\.]+)", indicateurs)
+            match_high = re.search(r"High[^0-9]*([\d\.]+)", str(indicateurs))
+            match_low = re.search(r"Low[^0-9]*([\d\.]+)", str(indicateurs))
             if match_high:
                 high = float(match_high.group(1))
             if match_low:
@@ -107,11 +107,7 @@ async def analyser_globale():
         try:
             heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
 
-            # 🔄 Conversion indicateurs en texte si dict
-            if isinstance(indicateurs, dict):
-                indicateurs_text = "\n".join([f"{k}: {v}" for k, v in indicateurs.items()])
-            else:
-                indicateurs_text = str(indicateurs)
+            indicateurs_text = str(indicateurs)
 
             tendance = (
                 "📈 haussière" if "hauss" in indicateurs_text.lower()
