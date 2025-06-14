@@ -22,7 +22,7 @@ async def analyser_opportunites():
         print(f"➡️ Analyse en cours sur {symbole}", flush=True)
         try:
             heure, indicateurs = recuperer_donnees(symbole, API_KEY)
-            analyse = generer_signal_ia(symbole, heure, str(indicateurs))  # ✅ Conversion ici
+            analyse = generer_signal_ia(symbole, heure, str(indicateurs))
 
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
@@ -31,17 +31,27 @@ async def analyser_opportunites():
             if "taux de réussite" in analyse.lower() and "%" in analyse:
                 taux = re.search(r"(\d{1,3})\s*%", analyse)
                 if taux and int(taux.group(1)) >= 60:
-                    # 🔍 Vérifie SL minimum : 1.4 pour Gold, 20 pour BTC
                     entry_match = re.search(r"entrée\s*[:\-]?\s*([\d\.]+)", analyse.lower())
                     stop_match = re.search(r"stop\s*[:\-]?\s*([\d\.]+)", analyse.lower())
+
                     if entry_match and stop_match:
                         entry = float(entry_match.group(1))
                         stop = float(stop_match.group(1))
                         ecart = abs(entry - stop)
                         min_distance = 1.4 if symbole == "XAU/USD" else 20
+
                         if ecart < min_distance:
-                            print(f"❌ Distance SL ({ecart}) trop faible pour {symbole}, plan rejeté", flush=True)
-                            continue
+                            if stop > entry:
+                                stop = entry + min_distance
+                            else:
+                                stop = entry - min_distance
+                            analyse = re.sub(
+                                r"(stop\s*[:\-]?\s*)([\d\.]+)",
+                                f"\\1{stop:.2f}",
+                                analyse,
+                                flags=re.IGNORECASE
+                            )
+                            analyse += f"\n⚠️ Stop ajusté automatiquement à {stop:.2f} pour respecter la distance minimale ({min_distance})."
 
                     print(f"✅ Envoi du signal Telegram pour {symbole}", flush=True)
                     await asyncio.wait_for(
@@ -68,7 +78,7 @@ async def analyser_opr():
                     print(f"🔍 Analyse OPR pour {symbole}", flush=True)
                     heure, indicateurs = recuperer_donnees(symbole, API_KEY)
                     high, low = opr_range[symbole]
-                    signal = generer_signal_opr(symbole, heure, str(indicateurs), high, low)  # ✅ conversion aussi
+                    signal = generer_signal_opr(symbole, heure, str(indicateurs), high, low)
 
                     if signal and "aucune" not in signal.lower() and "pas de cassure" not in signal.lower():
                         await envoyer_message(f"📈 Signal OPR {symbole} ({heure})\n{signal}")
@@ -97,43 +107,6 @@ async def memoriser_range_opr():
         except Exception as e:
             print(f"❌ Erreur lors de l’enregistrement du range OPR pour {symbole} : {e}", flush=True)
 
-# 📊 Analyse globale toutes les heures avec résumé exploitable
-async def analyser_globale():
-    print(f"[{time.strftime('%H:%M:%S')}] 🧠 Analyse globale lancée", flush=True)
-    symboles = SYMBOLS.split(",")
-    resume_global = f"📊 Analyse horaire – {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-
-    for symbole in symboles:
-        try:
-            heure, indicateurs = recuperer_donnees(symbole.strip(), API_KEY)
-
-            indicateurs_text = str(indicateurs)
-
-            tendance = (
-                "📈 haussière" if "hauss" in indicateurs_text.lower()
-                else "📉 baissière" if "baiss" in indicateurs_text.lower()
-                else "🔁 neutre"
-            )
-
-            rsi = re.search(r"RSI\s*[:\-]?\s*([\d\.]+)", indicateurs_text)
-            rsi_val = float(rsi.group(1)) if rsi else None
-            if rsi_val:
-                if rsi_val > 70:
-                    rsi_com = "📊 Surachat"
-                elif rsi_val < 30:
-                    rsi_com = "📉 Survente"
-                else:
-                    rsi_com = "RSI neutre"
-            else:
-                rsi_com = "RSI inconnu"
-
-            resume_global += f"🔹 {symbole.strip()} : {tendance} | RSI : {rsi_val or 'N/A'} → {rsi_com}\n"
-
-        except Exception as e:
-            resume_global += f"❌ {symbole.strip()} : erreur analyse – {e}\n"
-
-    await envoyer_message(resume_global)
-
 # 🔐 Exécution sécurisée
 def run_async(coroutine_func):
     loop = asyncio.get_event_loop()
@@ -161,7 +134,7 @@ async def main():
     print("✅ Bot lancé. Démarrage des premières analyses...", flush=True)
     run_async(analyser_opportunites)
     schedule.every(5).minutes.do(lambda: run_async(analyser_opportunites))
-    schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
+    # 🔁 Ligne supprimée : schedule.every().hour.at(":00").do(lambda: run_async(analyser_globale))
     schedule.every().day.at("15:45").do(lambda: run_async(memoriser_range_opr))
     schedule.every(1).minutes.do(lambda: run_async(analyser_opr))
     await boucle_schedule()
