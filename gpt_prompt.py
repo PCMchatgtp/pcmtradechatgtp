@@ -61,12 +61,9 @@ def generer_signal_ia(symbole, heure, indicateurs_bruts):
             f"Tu es un expert en trading algorithmique.\n"
             f"Voici l’analyse technique actuelle de {symbole}, le {jour} à {heure_locale} :\n\n"
             f"{indicateurs}\n\n"
-            f"Considère une opportunité s’il y a au moins deux éléments compatibles : exemple surachat RSI + cassure EMA.\n"
-            f"Même si les conditions idéales ne sont pas réunies, propose un plan cohérent si un mouvement semble probable.\n"
-            f"Tu peux indiquer si le plan est risqué ou incertain.\n"
-            f"Ne propose rien uniquement si les données sont totalement contradictoires ou inutilisables.\n\n"
-            f"Si vraiment aucune opportunité, réponds uniquement : 'Aucune opportunité claire détectée.'\n\n"
-            f"Sinon, donne un plan structuré :\n"
+            f"Tu dois toujours proposer un plan, même si les données sont imparfaites ou contradictoires.\n"
+            f"Fais de ton mieux avec ce que tu as. Propose un plan même risqué ou incertain si un mouvement est plausible.\n\n"
+            f"Donne un plan structuré :\n"
             f"1. Direction (Long ou Short)\n"
             f"2. Niveau d’entrée\n"
             f"3. Stop loss\n"
@@ -91,8 +88,6 @@ def generer_signal_ia(symbole, heure, indicateurs_bruts):
     except Exception as e:
         return f"❌ Erreur GPT pour {symbole} : {e}"
 
-
-# ✅ Fonction OPR réintégrée ci-dessous
 def generer_signal_opr(symbole, heure, indicateurs, high_range, low_range):
     try:
         paris_tz = pytz.timezone("Europe/Paris")
@@ -106,13 +101,11 @@ def generer_signal_opr(symbole, heure, indicateurs, high_range, low_range):
             f"Le range initial 15h30–15h45 (heure de Paris) est défini comme suit :\n"
             f"- Plus haut : {high_range}\n"
             f"- Plus bas : {low_range}\n\n"
-            f"Tu dois vérifier s’il y a eu une cassure nette AU-DESSUS ou EN-DESSOUS de ce range "
-            f"dans les minutes qui suivent (jusqu’à 16h15).\n"
-            f"Si une cassure est visible, propose un plan cohérent même si tout n’est pas parfait, "
-            f"tant que la structure de cassure reste logique et exploitable.\n"
-            f"Si la situation est confuse, réponds uniquement : 'Pas de cassure, aucune prise de position OPR à envisager.'\n\n"
-            f"Si cassure, donne :\n"
-            f"1. Direction (Long ou Short selon la cassure)\n"
+            f"Tu dois détecter toute cassure au-dessus ou en dessous de ce range.\n"
+            f"Si une cassure est visible, propose un plan même si les conditions sont imparfaites.\n"
+            f"Ne refuse jamais de répondre. Utilise ton expérience pour construire une stratégie exploitable.\n\n"
+            f"Plan à donner :\n"
+            f"1. Direction (Long ou Short)\n"
             f"2. Niveau d’entrée\n"
             f"3. Stop\n"
             f"4. TP1, TP2, TP3\n"
