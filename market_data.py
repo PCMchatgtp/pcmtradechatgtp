@@ -1,9 +1,19 @@
 import requests
 import datetime
 import pytz
+import time
 from config import OPENAI_API_KEY
 
+# 🧠 Cache local des données par symbole
+_cache = {}
+
 def recuperer_donnees(symbole, api_key):
+    now = time.time()
+
+    # Vérifie si les données en cache sont récentes (< 5 min)
+    if symbole in _cache and now - _cache[symbole]["timestamp"] < 300:
+        return _cache[symbole]["heure"], _cache[symbole]["indicateurs"]
+
     # 📊 Récupération des prix
     url_price = f"https://api.twelvedata.com/time_series"
     params_price = {
@@ -78,6 +88,13 @@ def recuperer_donnees(symbole, api_key):
             f"Tendance : {tendance}\n"
             f"Variation % : {((close_price - open_price) / open_price * 100):.2f}%"
         )
+
+        # 🧠 Sauvegarde en cache
+        _cache[symbole] = {
+            "timestamp": now,
+            "heure": heure,
+            "indicateurs": indicateurs
+        }
 
         return heure, indicateurs
 
