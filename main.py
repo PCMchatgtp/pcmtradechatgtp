@@ -12,7 +12,6 @@ import pytz
 
 API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 opr_range = {}
-DEBUG_MODE = True  # ✅ Mode debug activé pour forcer l’envoi même si taux < 60 %
 
 # 🔁 Analyse toutes les 5 min
 async def analyser_opportunites():
@@ -27,34 +26,18 @@ async def analyser_opportunites():
             analyse = generer_signal_ia(symbole, heure, str(indicateurs))
             print(f"🧠 Réponse GPT brute pour {symbole} :\n{analyse}", flush=True)
 
+            # 💾 Log dans un fichier
+            with open("log_signaux.txt", "a", encoding="utf-8") as log_fichier:
+                log_fichier.write(f"\n----- {datetime.now()} - {symbole} -----\n{analyse}\n")
+
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
                 continue
 
-            if "taux de réussite" in analyse.lower() and "%" in analyse:
-                taux = re.search(r"(\d{1,3})\s*%", analyse)
-                if taux and int(taux.group(1)) >= 50:
-                    entry_match = re.search(r"entrée\s*[:\-]?\s*([\d\.]+)", analyse.lower())
-                    stop_match = re.search(r"stop\s*[:\-]?\s*([\d\.]+)", analyse.lower())
-                    if entry_match and stop_match:
-                        entry = float(entry_match.group(1))
-                        stop = float(stop_match.group(1))
-                        ecart = abs(entry - stop)
-                        min_distance = 1.0 if symbole == "XAU/USD" else 15
-                        if ecart < min_distance:
-                            print(f"❌ Distance SL ({ecart}) trop faible pour {symbole}, plan rejeté", flush=True)
-                            continue
-
-                    print(f"✅ Envoi du signal Telegram pour {symbole}", flush=True)
-                    await asyncio.wait_for(
-                        envoyer_message(f"💡 Opportunité détectée sur {symbole} ({heure})\n{analyse}"), timeout=10
-                    )
-
-                elif DEBUG_MODE and taux:
-                    print(f"⚠️ Signal FAIBLE envoyé malgré taux bas ({taux.group(1)}%) sur {symbole}", flush=True)
-                    await envoyer_message(f"💡 [FAIBLE] Opportunité détectée sur {symbole} ({heure})\n{analyse}")
-                else:
-                    print(f"❌ Taux de réussite trop faible sur {symbole}", flush=True)
+            print(f"✅ Envoi Telegram forcé pour {symbole}", flush=True)
+            await asyncio.wait_for(
+                envoyer_message(f"💡 Signal GPT détecté sur {symbole} ({heure})\n{analyse}"), timeout=10
+            )
 
         except asyncio.TimeoutError:
             print(f"⏱️ Timeout sur {symbole} – Telegram trop lent", flush=True)
