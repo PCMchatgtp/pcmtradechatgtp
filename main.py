@@ -23,7 +23,9 @@ async def analyser_opportunites():
         print(f"➡️ Analyse en cours sur {symbole}", flush=True)
         try:
             heure, indicateurs = recuperer_donnees(symbole, API_KEY)
-            analyse = generer_signal_ia(symbole, heure, str(indicateurs))  # ✅ Conversion ici
+            print(f"🔍 Indicateurs récupérés pour {symbole} : {indicateurs}", flush=True)
+            analyse = generer_signal_ia(symbole, heure, str(indicateurs))
+            print(f"🧠 Réponse GPT brute pour {symbole} :\n{analyse}", flush=True)
 
             if not analyse or "aucune opportunité" in analyse.lower():
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
