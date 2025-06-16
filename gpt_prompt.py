@@ -9,7 +9,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 def enrichir_indicateurs(indicateurs_bruts):
     resume = []
 
-    rsi_match = re.search(r"RSI\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts, re.IGNORECASE)
+    # RSI
+    rsi_match = re.search(r"RSI\s*\(14\)\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts, re.IGNORECASE)
     if rsi_match:
         rsi = float(rsi_match.group(1))
         if rsi > 70:
@@ -21,8 +22,9 @@ def enrichir_indicateurs(indicateurs_bruts):
     else:
         resume.append("RSI non détecté")
 
-    macd_match = re.search(r"MACD\s*[:\-]?\s*([\d\.\-]+)", indicateurs_bruts, re.IGNORECASE)
-    signal_match = re.search(r"Signal\s*[:\-]?\s*([\d\.\-]+)", indicateurs_bruts, re.IGNORECASE)
+    # MACD
+    macd_match = re.search(r"MACD\s*[:\-]?\s*([\d\.\-]+)", indicateurs_bruts)
+    signal_match = re.search(r"Signal\s*[:\-]?\s*([\d\.\-]+)", indicateurs_bruts)
     if macd_match and signal_match:
         macd = float(macd_match.group(1))
         signal = float(signal_match.group(1))
@@ -35,17 +37,55 @@ def enrichir_indicateurs(indicateurs_bruts):
     else:
         resume.append("MACD non détecté")
 
-    volume_match = re.search(r"Volume\s*[:\-]?\s*([\d\.kKmM]+)", indicateurs_bruts, re.IGNORECASE)
-    if volume_match:
-        resume.append(f"Volume : {volume_match.group(1)}")
+    # Stochastique
+    stoch_k = re.search(r"STOCH\s*%K\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts, re.IGNORECASE)
+    stoch_d = re.search(r"%D\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts, re.IGNORECASE)
+    if stoch_k and stoch_d:
+        k = float(stoch_k.group(1))
+        d = float(stoch_d.group(1))
+        if k > 80 and d > 80:
+            resume.append(f"STOCH %K {k}, %D {d} (surachat)")
+        elif k < 20 and d < 20:
+            resume.append(f"STOCH %K {k}, %D {d} (survente)")
+        else:
+            resume.append(f"STOCH %K {k}, %D {d} (zone neutre)")
     else:
-        resume.append("Volume non détecté")
+        resume.append("STOCH non détecté")
 
-    ma_matches = re.findall(r"(EMA|SMA)[\s\-]?\d+\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts, re.IGNORECASE)
-    if ma_matches:
-        resume.extend([f"{ma[0].upper()} : {ma[1]}" for ma in ma_matches])
+    # Bandes de Bollinger
+    bb_upper = re.search(r"Bollinger Haut\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts)
+    bb_lower = re.search(r"Bas\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts)
+    if bb_upper and bb_lower:
+        resume.append(f"Bollinger : haut {bb_upper.group(1)} / bas {bb_lower.group(1)}")
     else:
-        resume.append("Pas de moyenne mobile détectée")
+        resume.append("Bandes de Bollinger non détectées")
+
+    # EMA9
+    ema9_match = re.search(r"EMA9\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts)
+    if ema9_match:
+        resume.append(f"EMA9 : {ema9_match.group(1)}")
+    else:
+        resume.append("EMA9 non détectée")
+
+    # Tendance
+    tendance = re.search(r"Tendance\s*[:\-]?\s*(\w+)", indicateurs_bruts)
+    if tendance:
+        resume.append(f"Tendance : {tendance.group(1)}")
+
+    # Variation %
+    variation = re.search(r"Variation\s*%\s*[:\-]?\s*([\-\d\.]+)%", indicateurs_bruts)
+    if variation:
+        resume.append(f"Variation : {variation.group(1)}%")
+
+    # Taille du corps
+    body_size = re.search(r"Taille corps\s*[:\-]?\s*([\d\.]+)", indicateurs_bruts)
+    if body_size:
+        resume.append(f"Taille bougie : {body_size.group(1)}")
+
+    # Volume
+    volume = re.search(r"Volume\s*[:\-]?\s*([\d\.kKmM]+)", indicateurs_bruts)
+    if volume:
+        resume.append(f"Volume : {volume.group(1)}")
 
     return "\n".join(resume)
 
