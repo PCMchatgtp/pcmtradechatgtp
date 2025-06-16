@@ -4,22 +4,29 @@ import pytz
 import time
 from config import OPENAI_API_KEY
 
-# 🧠 Cache local des données par symbole
 _cache = {}
 
 def recuperer_donnees(symbole, api_key):
     now = time.time()
 
-    # Vérifie si les données en cache sont récentes (< 5 min)
     if symbole in _cache and now - _cache[symbole]["timestamp"] < 300:
         return _cache[symbole]["heure"], _cache[symbole]["indicateurs"]
 
     base_url = "https://api.twelvedata.com"
 
     def get(endpoint, params):
-        response = requests.get(f"{base_url}/{endpoint}", params={**params, "symbol": symbole, "interval": "5min", "apikey": api_key})
-        data = response.json()
-        return data["values"][0] if "values" in data else {}
+        try:
+            response = requests.get(f"{base_url}/{endpoint}", params={**params, "symbol": symbole, "interval": "5min", "apikey": api_key})
+            data = response.json()
+            if "values" in data and isinstance(data["values"], list) and data["values"]:
+                return data["values"][0]
+            elif "value" in data:
+                return data  # ex: pour VWAP
+            else:
+                raise ValueError(f"⚠️ Données manquantes pour {endpoint}")
+        except Exception as e:
+            print(f"❌ Erreur API {endpoint} pour {symbole} : {e}")
+            return {}
 
     try:
         candle = get("time_series", {"outputsize": 1})
@@ -29,6 +36,9 @@ def recuperer_donnees(symbole, api_key):
         macd = get("macd", {"fast_period": 12, "slow_period": 26, "signal_period": 9})
         bbands = get("bbands", {"time_period": 20, "stddev": 2})
         vwap = get("vwap", {})
+
+        if not candle:
+            raise ValueError("Bougie manquante")
 
         open_price = float(candle.get("open", 0))
         high_price = float(candle.get("high", 0))
@@ -44,13 +54,12 @@ def recuperer_donnees(symbole, api_key):
         ma_200 = float(ma200.get("ma")) if "ma" in ma200 else None
         tendance = "haussière" if ma_50 and ma_200 and ma_50 > ma_200 else "baissière" if ma_50 and ma_200 else "indéterminée"
 
-        # Indicateurs supplémentaires
         macd_val = macd.get("macd", "N/A")
         signal_val = macd.get("signal", "N/A")
         bb_upper = bbands.get("upper_band", "N/A")
         bb_middle = bbands.get("middle_band", "N/A")
         bb_lower = bbands.get("lower_band", "N/A")
-        vwap_val = vwap.get("vwap", "N/A")
+        vwap_val = vwap.get("value", "N/A")  # la clé est "value" pour VWAP
 
         indicateurs = (
             f"Prix ouverture : {open_price}\n"
