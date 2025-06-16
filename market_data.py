@@ -4,59 +4,44 @@ import pytz
 import time
 from config import OPENAI_API_KEY
 
-# 🧠 Cache local des données par symbole
 _cache = {}
 
 def recuperer_donnees(symbole, api_key):
     now = time.time()
 
-    # Vérifie si les données en cache sont récentes (< 5 min)
     if symbole in _cache and now - _cache[symbole]["timestamp"] < 300:
         return _cache[symbole]["heure"], _cache[symbole]["indicateurs"]
 
-    # 📊 Récupération des prix
-    url_price = f"https://api.twelvedata.com/time_series"
-    params_price = {
+    url_base = "https://api.twelvedata.com/"
+    params_base = {
         "symbol": symbole,
         "interval": "5min",
-        "outputsize": 1,
         "apikey": api_key
     }
 
-    # 📈 Récupération du RSI 14
-    url_rsi = f"https://api.twelvedata.com/rsi"
-    params_rsi = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 14,
-        "apikey": api_key
+    endpoints = {
+        "prix": ("time_series", {"outputsize": 1}),
+        "rsi": ("rsi", {"time_period": 14}),
+        "ma50": ("ma", {"time_period": 50}),
+        "ma200": ("ma", {"time_period": 200}),
+        "ema9": ("ema", {"time_period": 9}),
+        "macd": ("macd", {"short_period": 12, "long_period": 26, "signal_period": 9}),
+        "stoch": ("stoch", {"slow_k_period": 14, "slow_d_period": 3}),
+        "bbands": ("bbands", {"time_period": 20})
     }
 
-    # 📉 Récupération des moyennes mobiles
-    url_ma50 = f"https://api.twelvedata.com/ma"
-    url_ma200 = f"https://api.twelvedata.com/ma"
-    params_ma50 = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 50,
-        "apikey": api_key
-    }
-    params_ma200 = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 200,
-        "apikey": api_key
-    }
+    data = {}
 
     try:
-        prix = requests.get(url_price, params=params_price).json()
-        rsi = requests.get(url_rsi, params=params_rsi).json()
-        ma50 = requests.get(url_ma50, params=params_ma50).json()
-        ma200 = requests.get(url_ma200, params=params_ma200).json()
+        for key, (endpoint, extra_params) in endpoints.items():
+            params = params_base.copy()
+            params.update(extra_params)
+            response = requests.get(url_base + endpoint, params=params).json()
+            data[key] = response
 
-        if "values" not in prix:
-            raise ValueError(f"❌ Erreur données prix : {prix}")
-        candle = prix["values"][0]
+        if "values" not in data["prix"]:
+            raise ValueError(f"❌ Erreur données prix : {data['prix']}")
+        candle = data["prix"]["values"][0]
 
         open_price = float(candle["open"])
         high_price = float(candle["high"])
@@ -67,12 +52,17 @@ def recuperer_donnees(symbole, api_key):
 
         heure = datetime.datetime.now(pytz.timezone("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")
 
-        # RSI
-        rsi_value = rsi["values"][0]["rsi"] if "values" in rsi else "N/A"
+        rsi_value = data["rsi"]["values"][0]["rsi"] if "values" in data["rsi"] else "N/A"
+        ma_50 = float(data["ma50"]["values"][0]["ma"]) if "values" in data["ma50"] else None
+        ma_200 = float(data["ma200"]["values"][0]["ma"]) if "values" in data["ma200"] else None
+        ema_9 = float(data["ema9"]["values"][0]["ema"]) if "values" in data["ema9"] else None
+        macd_line = data["macd"]["values"][0]["macd"] if "values" in data["macd"] else "N/A"
+        macd_signal = data["macd"]["values"][0]["signal"] if "values" in data["macd"] else "N/A"
+        stoch_k = data["stoch"]["values"][0]["slow_k"] if "values" in data["stoch"] else "N/A"
+        stoch_d = data["stoch"]["values"][0]["slow_d"] if "values" in data["stoch"] else "N/A"
+        bb_upper = data["bbands"]["values"][0]["upper_band"] if "values" in data["bbands"] else "N/A"
+        bb_lower = data["bbands"]["values"][0]["lower_band"] if "values" in data["bbands"] else "N/A"
 
-        # Moyennes mobiles
-        ma_50 = float(ma50["values"][0]["ma"]) if "values" in ma50 else None
-        ma_200 = float(ma200["values"][0]["ma"]) if "values" in ma200 else None
         tendance = "haussière" if ma_50 and ma_200 and ma_50 > ma_200 else "baissière" if ma_50 and ma_200 else "indéterminée"
 
         indicateurs = (
@@ -85,11 +75,14 @@ def recuperer_donnees(symbole, api_key):
             f"Range (H-L) : {high_price - low_price:.2f}\n"
             f"Taille corps : {abs(close_price - open_price):.2f}\n"
             f"RSI (14) : {rsi_value}\n"
+            f"MACD : {macd_line} | Signal : {macd_signal}\n"
+            f"STOCH %K : {stoch_k} | %D : {stoch_d}\n"
+            f"Bollinger Haut : {bb_upper} | Bas : {bb_lower}\n"
+            f"EMA9 : {ema_9}\n"
             f"Tendance : {tendance}\n"
             f"Variation % : {((close_price - open_price) / open_price * 100):.2f}%"
         )
 
-        # 🧠 Sauvegarde en cache
         _cache[symbole] = {
             "timestamp": now,
             "heure": heure,
