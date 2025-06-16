@@ -14,84 +14,43 @@ def recuperer_donnees(symbole, api_key):
     if symbole in _cache and now - _cache[symbole]["timestamp"] < 300:
         return _cache[symbole]["heure"], _cache[symbole]["indicateurs"]
 
-    # 📊 Récupération des prix
-    url_price = "https://api.twelvedata.com/time_series"
-    params_price = {
-        "symbol": symbole,
-        "interval": "5min",
-        "outputsize": 1,
-        "apikey": api_key
-    }
+    base_url = "https://api.twelvedata.com"
 
-    # 📈 RSI
-    url_rsi = "https://api.twelvedata.com/rsi"
-    params_rsi = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 14,
-        "apikey": api_key
-    }
-
-    # 📉 Moyennes mobiles
-    url_ma = "https://api.twelvedata.com/ma"
-    params_ma50 = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 50,
-        "apikey": api_key
-    }
-    params_ma200 = {
-        "symbol": symbole,
-        "interval": "5min",
-        "time_period": 200,
-        "apikey": api_key
-    }
+    def get(endpoint, params):
+        response = requests.get(f"{base_url}/{endpoint}", params={**params, "symbol": symbole, "interval": "5min", "apikey": api_key})
+        data = response.json()
+        return data["values"][0] if "values" in data else {}
 
     try:
-        prix = requests.get(url_price, params=params_price).json()
-        rsi = requests.get(url_rsi, params=params_rsi).json()
-        ma50 = requests.get(url_ma, params=params_ma50).json()
-        ma200 = requests.get(url_ma, params=params_ma200).json()
+        candle = get("time_series", {"outputsize": 1})
+        rsi = get("rsi", {"time_period": 14})
+        ma50 = get("ma", {"time_period": 50})
+        ma200 = get("ma", {"time_period": 200})
+        macd = get("macd", {"fast_period": 12, "slow_period": 26, "signal_period": 9})
+        bbands = get("bbands", {"time_period": 20, "stddev": 2})
+        vwap = get("vwap", {})
 
-        if "values" not in prix or not prix["values"]:
-            raise ValueError(f"❌ Erreur données prix : {prix}")
-        candle = prix["values"][0]
-
-        open_price = float(candle["open"])
-        high_price = float(candle["high"])
-        low_price = float(candle["low"])
-        close_price = float(candle["close"])
+        open_price = float(candle.get("open", 0))
+        high_price = float(candle.get("high", 0))
+        low_price = float(candle.get("low", 0))
+        close_price = float(candle.get("close", 0))
         volume = candle.get("volume", "N/A")
         average_price = (high_price + low_price + close_price) / 3
 
         heure = datetime.datetime.now(pytz.timezone("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")
 
-        # RSI sécurisé
-        rsi_value = "N/A"
-        if "values" in rsi and isinstance(rsi["values"], list) and len(rsi["values"]) > 0:
-            rsi_value = rsi["values"][0].get("rsi", "N/A")
+        rsi_value = rsi.get("rsi", "N/A")
+        ma_50 = float(ma50.get("ma")) if "ma" in ma50 else None
+        ma_200 = float(ma200.get("ma")) if "ma" in ma200 else None
+        tendance = "haussière" if ma_50 and ma_200 and ma_50 > ma_200 else "baissière" if ma_50 and ma_200 else "indéterminée"
 
-        # Moyennes mobiles sécurisées
-        ma_50 = None
-        if "values" in ma50 and ma50["values"]:
-            try:
-                ma_50 = float(ma50["values"][0].get("ma"))
-            except:
-                pass
-
-        ma_200 = None
-        if "values" in ma200 and ma200["values"]:
-            try:
-                ma_200 = float(ma200["values"][0].get("ma"))
-            except:
-                pass
-
-        tendance = "indéterminée"
-        if ma_50 is not None and ma_200 is not None:
-            if ma_50 > ma_200:
-                tendance = "haussière"
-            elif ma_50 < ma_200:
-                tendance = "baissière"
+        # Indicateurs supplémentaires
+        macd_val = macd.get("macd", "N/A")
+        signal_val = macd.get("signal", "N/A")
+        bb_upper = bbands.get("upper_band", "N/A")
+        bb_middle = bbands.get("middle_band", "N/A")
+        bb_lower = bbands.get("lower_band", "N/A")
+        vwap_val = vwap.get("vwap", "N/A")
 
         indicateurs = (
             f"Prix ouverture : {open_price}\n"
@@ -104,10 +63,15 @@ def recuperer_donnees(symbole, api_key):
             f"Taille corps : {abs(close_price - open_price):.2f}\n"
             f"RSI (14) : {rsi_value}\n"
             f"Tendance : {tendance}\n"
-            f"Variation % : {((close_price - open_price) / open_price * 100):.2f}%"
+            f"Variation % : {((close_price - open_price) / open_price * 100):.2f}%\n"
+            f"MACD : {macd_val}\n"
+            f"Signal : {signal_val}\n"
+            f"Bollinger Haut : {bb_upper}\n"
+            f"Bollinger Milieu : {bb_middle}\n"
+            f"Bollinger Bas : {bb_lower}\n"
+            f"VWAP : {vwap_val}"
         )
 
-        # Sauvegarde en cache
         _cache[symbole] = {
             "timestamp": now,
             "heure": heure,
