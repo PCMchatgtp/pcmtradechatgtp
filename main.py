@@ -30,11 +30,16 @@ async def analyser_opportunites():
             with open("log_signaux.txt", "a", encoding="utf-8") as log_fichier:
                 log_fichier.write(f"\n----- {datetime.now()} - {symbole} -----\n{analyse}\n")
 
-            if not analyse or "aucune opportunité" in analyse.lower():
-                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Aucune opportunité détectée sur {symbole}", flush=True)
+            # 🛑 Filtrage des signaux trop vagues
+            mots_clefs_nuls = [
+                "aucune opportunité", "difficile de déterminer", "pas de signaux clairs",
+                "incertain", "pas de cassure", "neutre", "incomplet", "spéculatif"
+            ]
+            if not analyse or any(mot in analyse.lower() for mot in mots_clefs_nuls):
+                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Signal ignoré (non exploitable) pour {symbole}", flush=True)
                 continue
 
-            print(f"✅ Envoi Telegram forcé pour {symbole}", flush=True)
+            print(f"✅ Envoi Telegram validé pour {symbole}", flush=True)
             await asyncio.wait_for(
                 envoyer_message(f"💡 Signal GPT détecté sur {symbole} ({heure})\n{analyse}"), timeout=10
             )
