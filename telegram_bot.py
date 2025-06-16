@@ -1,20 +1,32 @@
-from telegram import Bot
-from telegram.constants import ParseMode
-from telegram.request import HTTPXRequest
+import aiohttp
 import asyncio
-import os
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 
-# Crée un bot avec une gestion de pool propre via HTTPX (plus fiable que aiohttp par défaut)
-request = HTTPXRequest(connect_timeout=5, read_timeout=10)
-bot = Bot(token=TELEGRAM_TOKEN, request=request)
+async def envoyer_message(message: str):
+    """
+    Envoie un message Telegram uniquement si le message n’est pas vide.
+    """
+    if not message.strip():
+        print("🔕 Message vide ignoré – rien à envoyer à Telegram")
+        return
 
-async def envoyer_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+
     try:
-        await bot.send_message(
-            chat_id=TELEGRAM_CHAT_ID,
-            text=message,
-            parse_mode=ParseMode.MARKDOWN  # optionnel, pour styliser si besoin
-        )
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=payload) as resp:
+                if resp.status != 200:
+                    print(f"❌ Erreur Telegram {resp.status}: {await resp.text()}")
+                else:
+                    print("📤 Message Telegram envoyé avec succès")
+
+    except asyncio.TimeoutError:
+        print("⏱️ Timeout lors de l’envoi Telegram")
+
     except Exception as e:
-        print(f"❌ Erreur lors de l'envoi Telegram : {e}", flush=True)
+        print(f"❌ Exception lors de l’envoi Telegram : {e}")
