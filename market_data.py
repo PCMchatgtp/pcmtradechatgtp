@@ -21,7 +21,7 @@ def recuperer_donnees(symbole, api_key):
             if "values" in data and isinstance(data["values"], list) and data["values"]:
                 return data["values"][0]
             elif "value" in data:
-                return data  # ex: pour VWAP
+                return data  # ex: VWAP
             else:
                 raise ValueError(f"⚠️ Données manquantes pour {endpoint}")
         except Exception as e:
@@ -30,6 +30,18 @@ def recuperer_donnees(symbole, api_key):
 
     try:
         candle = get("time_series", {"outputsize": 1})
+        if not candle:
+            raise ValueError("❌ Bougie manquante")
+
+        open_price = float(candle.get("open", 0))
+        high_price = float(candle.get("high", 0))
+        low_price = float(candle.get("low", 0))
+        close_price = float(candle.get("close", 0))
+
+        # 🚫 Si le prix est manifestement incorrect (ex : < 10), on stoppe tout
+        if close_price < 100:
+            raise ValueError(f"❌ Données incohérentes : close_price = {close_price}")
+
         rsi = get("rsi", {"time_period": 14})
         ma50 = get("ma", {"time_period": 50})
         ma200 = get("ma", {"time_period": 200})
@@ -37,16 +49,8 @@ def recuperer_donnees(symbole, api_key):
         bbands = get("bbands", {"time_period": 20, "stddev": 2})
         vwap = get("vwap", {})
 
-        if not candle:
-            raise ValueError("Bougie manquante")
-
-        open_price = float(candle.get("open", 0))
-        high_price = float(candle.get("high", 0))
-        low_price = float(candle.get("low", 0))
-        close_price = float(candle.get("close", 0))
         volume = candle.get("volume", "N/A")
         average_price = (high_price + low_price + close_price) / 3
-
         heure = datetime.datetime.now(pytz.timezone("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")
 
         rsi_value = rsi.get("rsi", "N/A")
