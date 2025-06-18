@@ -30,14 +30,22 @@ async def analyser_opportunites():
             with open("log_signaux.txt", "a", encoding="utf-8") as log_fichier:
                 log_fichier.write(f"\n----- {datetime.now()} - {symbole} -----\n{analyse}\n")
 
-            # 🛑 Filtrage des signaux inutiles
-            mots_clefs_nuls = [
-                "aucune opportunité", "difficile de déterminer", "pas de signaux clairs",
-                "incertain", "pas de cassure", "neutre", "incomplet", "spéculatif",
-                "n/a", "impossible", "attendre", "pas clair"
-            ]
+            # 🛑 Filtrage des signaux inutiles (plus strict)
             analyse_clean = analyse.lower().strip()
-            if not analyse or any(mot in analyse_clean for mot in mots_clefs_nuls):
+            phrases_inutiles = [
+                "difficile de proposer un plan",
+                "pas de signaux clairs",
+                "les données fournies ne permettent pas",
+                "données actuelles ne permettent pas",
+                "plusieurs indicateurs clés sont manquants",
+                "la tendance globale n'est pas définie",
+                "recommande de patienter",
+                "n'hésitez pas à fournir des informations supplémentaires",
+                "aucune opportunité", "signal spéculatif", "analyse plus approfondie",
+                "analyse incomplète", "pas clair", "trop incertain", "manque d'informations",
+                "signal neutre", "n/a", "attendre confirmation", "information insuffisante"
+            ]
+            if not analyse or any(phrase in analyse_clean for phrase in phrases_inutiles):
                 print(f"[{time.strftime('%H:%M:%S')}] ⚠️ Signal ignoré (non exploitable) pour {symbole}", flush=True)
                 continue
 
